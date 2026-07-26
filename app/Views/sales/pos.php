@@ -74,23 +74,8 @@
         </div>
 
         <!-- Lines -->
-        <div class="table-responsive">
-          <table class="table table-sm cart-table align-middle" id="posCartTable">
-            <thead>
-              <tr>
-                <th>Item</th>
-                <th style="width:84px" class="text-center">Qty</th>
-                <th style="width:96px" class="num">Price</th>
-                <th class="num">Total</th>
-                <th style="width:34px"></th>
-              </tr>
-            </thead>
-            <tbody id="posCartBody">
-              <tr class="pos-empty-row"><td colspan="5">
-                <div class="empty-state py-4"><i class="bi bi-cart"></i>Cart is empty.</div>
-              </td></tr>
-            </tbody>
-          </table>
+        <div class="cart-lines" id="posCartBody">
+          <div class="empty-state py-4"><i class="bi bi-cart"></i>Cart is empty.</div>
         </div>
 
         <!-- Totals -->

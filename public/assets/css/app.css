@@ -377,8 +377,49 @@ th a.sort-link:hover { color: var(--ds-accent); }
 }
 .pos-product:hover { border-color: var(--ds-accent); background: var(--ds-accent-soft); }
 
-.cart-table td { vertical-align: middle; }
-.cart-qty { width: 74px; }
+/* Cart lines: two rows per item — name + total, then qty stepper + price field.
+   Div-based on purpose: a 5-column table cannot breathe in a 420px panel. */
+.cart-lines { border-top: 1px solid var(--ds-border); }
+
+.cart-line {
+  padding: 0.6rem 0;
+  border-bottom: 1px solid var(--ds-border);
+}
+
+.cart-line .qty-group {
+  flex-wrap: nowrap;          /* Bootstrap input-groups wrap by default */
+  width: 112px;
+  flex: 0 0 auto;
+}
+.cart-line .qty-group .btn {
+  padding-left: 0.55rem;
+  padding-right: 0.55rem;
+  flex: 0 0 auto;
+}
+.cart-line .cart-qty-input {
+  min-width: 40px;
+  text-align: center;
+  padding-left: 0.1rem;
+  padding-right: 0.1rem;
+}
+
+.cart-line .price-group {
+  flex-wrap: nowrap;
+  width: 148px;
+  flex: 0 0 auto;
+}
+.cart-line .cart-price-input { text-align: right; }
+
+/* The spinner arrows steal ~20px per field — hide them inside the cart */
+.cart-line input[type="number"]::-webkit-outer-spin-button,
+.cart-line input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.cart-line input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
 
 .pos-total-row {
   display: flex;

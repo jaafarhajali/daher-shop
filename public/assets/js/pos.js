@@ -124,6 +124,11 @@
       });
       if (noPrice) {
         DS.toast('"' + p.name + '" has no selling price — type one in the cart before completing the sale.', 'warning');
+        renderCart();
+        // Put the cursor straight into the empty price field.
+        var inputs = $body.querySelectorAll('.cart-price-input');
+        if (inputs.length) inputs[inputs.length - 1].focus();
+        return;
       }
     }
     renderCart();
@@ -132,37 +137,50 @@
   function renderCart() {
     if (!cart.length) {
       $body.innerHTML =
-        '<tr class="pos-empty-row"><td colspan="5">' +
-        '<div class="empty-state py-4"><i class="bi bi-cart"></i>Cart is empty.</div></td></tr>';
+        '<div class="empty-state py-4"><i class="bi bi-cart"></i>Cart is empty.</div>';
     } else {
       $body.innerHTML = '';
       cart.forEach(function (line, i) {
         var priceMissing = line.price === null;
         var belowCost = !priceMissing && line.cost > 0 && line.price < line.cost;
 
-        var tr = document.createElement('tr');
-        tr.innerHTML =
-          '<td style="max-width:150px">' +
-            '<div class="text-truncate line-name"></div>' +
-            '<div class="small line-hint"></div>' +
-          '</td>' +
-          '<td><div class="input-group input-group-sm">' +
-            '<button class="btn btn-outline-secondary btn-qty-minus" type="button">−</button>' +
-            '<input class="form-control data text-center cart-qty-input" type="number" min="1" value="' + line.qty + '">' +
-            '<button class="btn btn-outline-secondary btn-qty-plus" type="button">+</button>' +
-          '</div></td>' +
-          '<td><input class="form-control form-control-sm data text-end cart-price-input" ' +
-                'type="number" min="0" step="0.01" placeholder="price"></td>' +
-          '<td class="num line-total"></td>' +
-          '<td><button class="btn btn-link text-danger p-0 btn-remove" type="button" title="Remove">' +
-            '<i class="bi bi-x-lg"></i></button></td>';
+        var el = document.createElement('div');
+        el.className = 'cart-line';
+        el.innerHTML =
+          // Row 1: name (+hint) ..... line total, remove
+          '<div class="d-flex justify-content-between align-items-start gap-2">' +
+            '<div class="min-w-0">' +
+              '<div class="fw-semibold text-truncate line-name"></div>' +
+              '<div class="small line-hint"></div>' +
+            '</div>' +
+            '<div class="d-flex align-items-center gap-2 flex-shrink-0">' +
+              '<span class="data fw-semibold line-total"></span>' +
+              '<button class="btn btn-link text-danger p-0 btn-remove" type="button" title="Remove">' +
+                '<i class="bi bi-x-lg"></i></button>' +
+            '</div>' +
+          '</div>' +
+          // Row 2: qty stepper ..... editable sale price
+          '<div class="d-flex justify-content-between align-items-center gap-2 mt-2">' +
+            '<div class="input-group input-group-sm qty-group">' +
+              '<button class="btn btn-outline-secondary btn-qty-minus" type="button">−</button>' +
+              '<input class="form-control data cart-qty-input" type="number" min="1" value="' + line.qty + '">' +
+              '<button class="btn btn-outline-secondary btn-qty-plus" type="button">+</button>' +
+            '</div>' +
+            '<div class="input-group input-group-sm price-group">' +
+              '<span class="input-group-text"></span>' +
+              '<input class="form-control data cart-price-input" ' +
+                     'type="number" min="0" step="0.01" placeholder="sale price">' +
+            '</div>' +
+          '</div>';
 
-        var nameEl = tr.querySelector('.line-name');
+        var nameEl = el.querySelector('.line-name');
         nameEl.textContent = line.name;
         nameEl.title = line.name;
 
-        // Hint under the name: missing price / edited vs default.
-        var hint = tr.querySelector('.line-hint');
+        el.querySelector('.price-group .input-group-text').textContent = CUR;
+
+        // Hint under the name: missing price / below cost / edited vs default.
+        var hint = el.querySelector('.line-hint');
         if (priceMissing) {
           hint.className = 'small line-hint text-danger';
           hint.textContent = 'enter a sale price';
@@ -176,25 +194,25 @@
           hint.remove();
         }
 
-        var priceInput = tr.querySelector('.cart-price-input');
+        var priceInput = el.querySelector('.cart-price-input');
         priceInput.value = priceMissing ? '' : line.price;
         if (priceMissing) priceInput.classList.add('border-danger');
         if (belowCost) priceInput.classList.add('border-warning');
 
-        tr.querySelector('.line-total').textContent =
+        el.querySelector('.line-total').textContent =
           priceMissing ? '—' : CUR + DS.money(line.price * line.qty);
 
-        tr.querySelector('.btn-qty-minus').addEventListener('click', function () {
+        el.querySelector('.btn-qty-minus').addEventListener('click', function () {
           line.qty > 1 ? (line.qty--, renderCart()) : removeLine(i);
         });
-        tr.querySelector('.btn-qty-plus').addEventListener('click', function () {
+        el.querySelector('.btn-qty-plus').addEventListener('click', function () {
           if (line.qty + 1 > line.stock) {
             DS.toast('Only ' + line.stock + ' in stock.', 'warning');
             return;
           }
           line.qty++; renderCart();
         });
-        tr.querySelector('.cart-qty-input').addEventListener('change', function (ev) {
+        el.querySelector('.cart-qty-input').addEventListener('change', function (ev) {
           var v = parseInt(ev.target.value, 10) || 1;
           if (v > line.stock) { v = line.stock; DS.toast('Only ' + line.stock + ' in stock.', 'warning'); }
           line.qty = Math.max(1, v);
@@ -205,9 +223,9 @@
           line.price = raw === '' ? null : Math.max(0, parseFloat(raw) || 0);
           renderCart();
         });
-        tr.querySelector('.btn-remove').addEventListener('click', function () { removeLine(i); });
+        el.querySelector('.btn-remove').addEventListener('click', function () { removeLine(i); });
 
-        $body.appendChild(tr);
+        $body.appendChild(el);
       });
     }
     refreshTotals();
