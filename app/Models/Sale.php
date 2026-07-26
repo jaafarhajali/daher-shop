@@ -80,11 +80,11 @@ final class Sale extends Model
             $discount = round(min(max(0.0, $header['discount']), $subtotal), 2);
             $total = round($subtotal - $discount, 2);
 
-            // Credit (دين) sales: nothing paid yet, and the debt needs a customer.
+            // Credit sales: nothing paid yet, and the debt needs a customer.
             $isCredit = $header['payment_method'] === 'credit';
             if ($isCredit && empty($header['customer_id'])) {
                 throw new \RuntimeException(
-                    'Credit (دين) sales must have a customer — please select the customer first.'
+                    'Credit sales must have a customer — please select the customer first.'
                 );
             }
 
@@ -264,6 +264,83 @@ final class Sale extends Model
              WHERE s.id = :id",
             ['id' => $id]
         );
+    }
+
+    /**
+     * Live invoice picker for the Return / Refund pages.
+     * One query string matches invoice number, customer name, phone,
+     * or any sold product's name. Completed invoices only.
+     *
+     * @return array paginate() shape; rows carry refunded + has_returnable
+     *               and, when $q matched a product, matched_product.
+     */
+    public function searchForPicker(string $q, string $sort, int $page, int $perPage = 8): array
+    {
+        $where = ["s.status = 'completed'"];
+        $params = [];
+
+        if ($q !== '') {
+            $where[] = '(s.invoice_no LIKE :q1 OR c.name LIKE :q2 OR c.phone LIKE :q3
+                         OR EXISTS(SELECT 1 FROM sale_items sx
+                                   WHERE sx.sale_id = s.id AND sx.product_name LIKE :q4))';
+            $like = '%' . $q . '%';
+            $params += ['q1' => $like, 'q2' => $like, 'q3' => $like, 'q4' => $like];
+        }
+
+        $orderBy = match ($sort) {
+            'date_asc' => 's.created_at ASC, s.id ASC',
+            'invoice'  => 's.invoice_no ASC',
+            'customer' => 'customer_name ASC, s.id DESC',
+            'total'    => 's.total DESC, s.id DESC',
+            default    => 's.created_at DESC, s.id DESC',   // latest first
+        };
+
+        $whereSql = implode(' AND ', $where);
+
+        $pg = $this->paginate(
+            "SELECT s.id, s.invoice_no, s.created_at, s.total, s.paid_amount, s.payment_method,
+                    COALESCE(c.name, 'Walk-in customer') AS customer_name, c.phone,
+                    (SELECT COALESCE(SUM(r.amount),0) FROM refunds r
+                     WHERE r.sale_id = s.id) AS refunded,
+                    (SELECT COALESCE(SUM(cp.amount),0) FROM customer_payments cp
+                     WHERE cp.sale_id = s.id AND cp.method = 'return_credit') AS return_credits,
+                    EXISTS(
+                        SELECT 1 FROM sale_items si
+                        WHERE si.sale_id = s.id
+                          AND si.quantity > COALESCE((
+                              SELECT SUM(ri.quantity) FROM return_items ri
+                              WHERE ri.sale_item_id = si.id), 0)
+                    ) AS has_returnable
+             FROM sales s
+             LEFT JOIN customers c ON c.id = s.customer_id
+             WHERE {$whereSql}
+             ORDER BY {$orderBy}",
+            "SELECT COUNT(*) FROM sales s LEFT JOIN customers c ON c.id = s.customer_id
+             WHERE {$whereSql}",
+            $params,
+            $page,
+            $perPage
+        );
+
+        // Tell the user WHY a row matched when the hit came from a product name.
+        if ($q !== '' && $pg['rows'] !== []) {
+            $ids = array_column($pg['rows'], 'id');
+            $in = implode(',', array_map('intval', $ids));
+            $matches = $this->fetchAll(
+                "SELECT sale_id, MIN(product_name) AS product_name
+                 FROM sale_items
+                 WHERE sale_id IN ({$in}) AND product_name LIKE :q
+                 GROUP BY sale_id",
+                ['q' => '%' . $q . '%']
+            );
+            $bySale = array_column($matches, 'product_name', 'sale_id');
+            foreach ($pg['rows'] as &$row) {
+                $row['matched_product'] = $bySale[$row['id']] ?? null;
+            }
+            unset($row);
+        }
+
+        return $pg;
     }
 
     /** Look an invoice up by its human number (INV-000123), case-insensitive. */

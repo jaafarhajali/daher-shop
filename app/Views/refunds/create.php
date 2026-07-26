@@ -16,20 +16,17 @@
   </div>
 </div>
 
-<!-- Step 1: invoice lookup -->
-<div class="card mb-3" style="max-width:640px">
-  <div class="card-body">
-    <form class="d-flex gap-2 align-items-end" method="get" action="index.php">
-      <input type="hidden" name="r" value="refunds/create">
-      <div class="flex-grow-1">
-        <label class="form-label" for="refInvoice">Invoice number</label>
-        <input class="form-control data" id="refInvoice" name="invoice"
-               placeholder="e.g. INV-000123" value="<?= e($sale['invoice_no'] ?? ($_GET['invoice'] ?? '')) ?>">
-      </div>
-      <button class="btn btn-outline-primary" type="submit"><i class="bi bi-search me-1"></i>Find invoice</button>
-    </form>
-  </div>
+<?php if ($sale === null): ?>
+  <!-- Step 1: find the invoice (live search) -->
+  <?php $pickerMode = 'refund'; require APP_PATH . '/Views/partials/invoice-picker.php'; ?>
+<?php else: ?>
+
+<div class="d-flex align-items-center gap-2 mb-3">
+  <a class="btn btn-outline-secondary btn-sm" href="<?= url('refunds/create') ?>">
+    <i class="bi bi-arrow-left me-1"></i>Choose a different invoice
+  </a>
 </div>
+<?php endif; ?>
 
 <?php if ($sale !== null): ?>
 <div class="card" style="max-width:640px">

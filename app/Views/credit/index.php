@@ -1,12 +1,12 @@
 <?php
 /**
- * Credit (دين) — all customers with outstanding balances.
+ * Credit — all customers with outstanding balances.
  * Expects: $debtors, $total
  */
 ?>
 <div class="page-heading">
   <div>
-    <h1>Credit (دين)</h1>
+    <h1>Credit</h1>
     <nav aria-label="breadcrumb">
       <ol class="breadcrumb">
         <li class="breadcrumb-item"><a href="<?= url('dashboard/index') ?>">Home</a></li>

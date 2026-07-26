@@ -26,7 +26,7 @@
   $tiles = [
       ['label' => 'Total purchases', 'value' => money($totals['purchases']), 'icon' => 'bag',        'fg' => '#0d9488', 'bg' => 'rgba(13,148,136,.12)'],
       ['label' => 'Total paid',      'value' => money($totals['paid']),      'icon' => 'check2-circle', 'fg' => '#16a34a', 'bg' => 'rgba(22,163,74,.12)'],
-      ['label' => 'Outstanding (دين)', 'value' => money($totals['outstanding']), 'icon' => 'exclamation-circle', 'fg' => '#dc2626', 'bg' => 'rgba(220,38,38,.12)'],
+      ['label' => 'Outstanding', 'value' => money($totals['outstanding']), 'icon' => 'exclamation-circle', 'fg' => '#dc2626', 'bg' => 'rgba(220,38,38,.12)'],
   ];
   foreach ($tiles as $t): ?>
   <div class="col-md-4">

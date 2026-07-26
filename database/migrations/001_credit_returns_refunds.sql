@@ -1,6 +1,6 @@
 -- ============================================================================
--- Daher Store — Migration 001 (v1.0 → v1.1)
--- Adds: warranty in days, optional selling price, credit (دين) payment method,
+-- Daher Phone — Migration 001 (v1.0 → v1.1)
+-- Adds: warranty in days, optional selling price, credit payment method,
 --        customer credit payments, product returns, money refunds.
 --
 -- SAFE FOR EXISTING DATA:
@@ -38,7 +38,7 @@ ALTER TABLE `products`
   MODIFY COLUMN `selling_price` DECIMAL(12,2) NULL DEFAULT NULL;
 
 -- ----------------------------------------------------------------------------
--- 3. Payment methods: cash / card / credit (دين)
+-- 3. Payment methods: cash / card / credit
 --    Legacy values stay in the enum so historic invoices keep their labels.
 -- ----------------------------------------------------------------------------
 ALTER TABLE `sales`

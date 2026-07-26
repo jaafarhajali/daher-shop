@@ -31,7 +31,7 @@
   $creditTiles = [
       ['label' => 'Total purchases', 'value' => money($creditTotals['purchases']), 'icon' => 'bag', 'fg' => '#0d9488', 'bg' => 'rgba(13,148,136,.12)'],
       ['label' => 'Total paid', 'value' => money($creditTotals['paid']), 'icon' => 'check2-circle', 'fg' => '#16a34a', 'bg' => 'rgba(22,163,74,.12)'],
-      ['label' => 'Outstanding (دين)', 'value' => money($creditTotals['outstanding']), 'icon' => 'exclamation-circle', 'fg' => '#dc2626', 'bg' => 'rgba(220,38,38,.12)'],
+      ['label' => 'Outstanding', 'value' => money($creditTotals['outstanding']), 'icon' => 'exclamation-circle', 'fg' => '#dc2626', 'bg' => 'rgba(220,38,38,.12)'],
   ];
   foreach ($creditTiles as $t): ?>
   <div class="col-md-4">

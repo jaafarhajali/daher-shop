@@ -1,13 +1,30 @@
-# Daher Store — Repair Shop Management System
+# Daher Phone — Repair Shop Management System
 
 A complete, offline-capable management system for a phone & computer repair shop:
-inventory, POS, repairs, customers, credit (دين), returns, refunds, expenses,
+inventory, POS, repairs, customers, credit, returns, refunds, expenses,
 reports, and backups.
 
 - **Stack:** PHP 8+, MySQL/MariaDB, Apache (XAMPP), Bootstrap 5, Chart.js (all bundled — no internet needed)
 - **Default login:** username `admin` · password `admin123` — **change it after first login** (Settings → My profile)
 
 ---
+
+## What's new in v1.3 — financial audit, English terminology, Daher Phone branding
+
+- **One source of truth for money numbers**: every dashboard card and every report
+  now computes from the same `Finance` model. The new **Financial summary** report
+  shows the whole picture (gross sales → net profit) for any date range.
+  Full plain-English documentation: [docs/FINANCE.md](docs/FINANCE.md).
+- **Three accounting corrections** found by the audit:
+  refunds are now capped at money *actually received* (return credits are not cash);
+  returns on unpaid credit invoices now reduce revenue (the reversed sale value was
+  previously counted forever); and returned goods now credit their cost back
+  (a fully returned + refunded sale nets to exactly zero, as it should).
+- Customer profiles now show **Total paid = real money received** and purchases
+  net of returns, so *purchases − paid = outstanding* always balances.
+- **Terminology**: the interface is 100 % English (all Arabic labels replaced by
+  "Credit"). **Branding**: the application is now **Daher Phone** everywhere —
+  run `database/migrations/002_branding_daher_phone.sql` once on existing installs.
 
 ## What's new in v1.2 — flexible sale pricing
 
@@ -31,8 +48,8 @@ reports, and backups.
 |---|---|
 | **Warranty in days** — set days per product; every sold line stores its own expiry date and Active/Expired state (invoice, customer history, Warranty-expiry report, dashboard "expiring soon" card) | Products → Warranty (days) |
 | **Optional selling price** — products can be saved without a price (marked **No price**, filterable); they cannot be sold until a price is set | Products |
-| **Payment methods** are now exactly **Cash / Card / Credit (دين)** (old invoices keep their historic labels) | POS |
-| **Customer credit (دين)** — credit sales save unpaid, show on the customer profile (purchases / paid / outstanding) and the dashboard; the **Credit** page records full or partial payments with history, and invoices auto-close at zero balance | Sidebar → Credit (دين) |
+| **Payment methods** are now exactly **Cash / Card / Credit** (old invoices keep their historic labels) | POS |
+| **Customer credit** — credit sales save unpaid, show on the customer profile (purchases / paid / outstanding) and the dashboard; the **Credit** page records full or partial payments with history, and invoices auto-close at zero balance | Sidebar → Credit |
 | **Product returns** — invoice-linked, partial-return support, quantity guards, automatic restock (journaled), and automatic debt reduction when the invoice was unpaid | Sidebar → Returns |
 | **Money refunds** — invoice-linked full/partial refunds capped at the money actually received, with printable receipts; refunds reduce net revenue in reports | Sidebar → Refunds |
 | **5 new reports** (outstanding credit, credit payments, returns, refunds, warranty expiry) + product / invoice-number filters, all exportable to CSV / Excel / PDF-print | Reports |

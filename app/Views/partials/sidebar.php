@@ -43,7 +43,7 @@ $navSections = [
     ],
     'People & Money' => [
         ['route' => 'customers/index', 'icon' => 'people',        'label' => 'Customers', 'match' => 'customers/'],
-        ['route' => 'credit/index',    'icon' => 'wallet2',       'label' => 'Credit (دين)', 'match' => 'credit/', 'badge' => $navDebtors, 'badgeColor' => 'danger'],
+        ['route' => 'credit/index',    'icon' => 'wallet2',       'label' => 'Credit', 'match' => 'credit/', 'badge' => $navDebtors, 'badgeColor' => 'danger'],
         ['route' => 'expenses/index',  'icon' => 'cash-stack',    'label' => 'Expenses',  'match' => 'expenses/'],
         ['route' => 'reports/index',   'icon' => 'graph-up',      'label' => 'Reports',   'match' => 'reports/'],
     ],

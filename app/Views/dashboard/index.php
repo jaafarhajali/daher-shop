@@ -24,10 +24,10 @@
 <div class="row g-3 mb-3">
   <?php
   $kpis = [
-      ['label' => "Today's sales",   'value' => money($todaySales),   'icon' => 'cash-coin',   'bg' => 'rgba(13,148,136,.12)',  'fg' => '#0d9488', 'sub' => 'completed sales today'],
-      ['label' => 'Sales this month','value' => money($monthSales),   'icon' => 'calendar3',   'bg' => 'rgba(2,132,199,.12)',   'fg' => '#0284c7', 'sub' => date('F Y')],
-      ['label' => 'Total revenue',   'value' => money($totalRevenue), 'icon' => 'graph-up-arrow','bg' => 'rgba(22,163,74,.12)', 'fg' => '#16a34a', 'sub' => 'sales + delivered repairs'],
-      ['label' => 'Gross profit',    'value' => money($grossProfit),  'icon' => 'piggy-bank',  'bg' => 'rgba(180,83,9,.12)',    'fg' => '#b45309', 'sub' => 'before expenses'],
+      ['label' => "Today's sales",   'value' => money($todaySales),   'icon' => 'cash-coin',   'bg' => 'rgba(13,148,136,.12)',  'fg' => '#0d9488', 'sub' => 'gross, before refunds'],
+      ['label' => 'Sales this month','value' => money($monthSales),   'icon' => 'calendar3',   'bg' => 'rgba(2,132,199,.12)',   'fg' => '#0284c7', 'sub' => 'gross · ' . date('F Y')],
+      ['label' => 'Total revenue',   'value' => money($totalRevenue), 'icon' => 'graph-up-arrow','bg' => 'rgba(22,163,74,.12)', 'fg' => '#16a34a', 'sub' => 'net of refunds & return credits'],
+      ['label' => 'Net profit',      'value' => money($netProfit),    'icon' => 'piggy-bank',  'bg' => 'rgba(180,83,9,.12)',    'fg' => '#b45309', 'sub' => 'gross profit ' . money($grossProfit) . ' − expenses'],
   ];
   foreach ($kpis as $k): ?>
   <div class="col-sm-6 col-xl-3">
@@ -80,7 +80,7 @@
 <div class="row g-3 mb-4">
   <?php
   $afterSales = [
-      ['label' => 'Outstanding credit (دين)', 'value' => money($creditTotal), 'icon' => 'wallet2', 'href' => url('credit/index'), 'fg' => '#dc2626', 'bg' => 'rgba(220,38,38,.12)', 'sub' => 'owed by customers'],
+      ['label' => 'Outstanding credit', 'value' => money($creditTotal), 'icon' => 'wallet2', 'href' => url('credit/index'), 'fg' => '#dc2626', 'bg' => 'rgba(220,38,38,.12)', 'sub' => 'owed by customers'],
       ['label' => 'Returns (30 days)', 'value' => money($returns30d), 'icon' => 'arrow-counterclockwise', 'href' => url('returns/index'), 'fg' => '#d97706', 'bg' => 'rgba(217,119,6,.12)', 'sub' => 'goods returned'],
       ['label' => 'Refunds (30 days)', 'value' => money($refunds30d), 'icon' => 'cash-coin', 'href' => url('refunds/index'), 'fg' => '#ea580c', 'bg' => 'rgba(234,88,12,.12)', 'sub' => 'money given back'],
       ['label' => 'No selling price', 'value' => (string) $noPriceCount, 'icon' => 'tag', 'href' => url('products/index', ['price' => 'missing']), 'fg' => '#0284c7', 'bg' => 'rgba(2,132,199,.12)', 'sub' => 'products to price'],

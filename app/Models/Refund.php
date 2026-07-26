@@ -40,11 +40,19 @@ final class Refund extends Model
                 throw new \RuntimeException('Enter a refund amount greater than zero.');
             }
 
+            // Refundable = money ACTUALLY received − already refunded.
+            // paid_amount alone would overstate it: it also contains return
+            // credits (debt reduced by returned goods), which is not cash.
+            $returnCredits = (float) $this->fetchValue(
+                "SELECT COALESCE(SUM(amount),0) FROM customer_payments
+                 WHERE sale_id = :id AND method = 'return_credit'",
+                ['id' => $saleId]
+            );
             $alreadyRefunded = (float) $this->fetchValue(
                 'SELECT COALESCE(SUM(amount),0) FROM refunds WHERE sale_id = :id',
                 ['id' => $saleId]
             );
-            $refundable = round((float) $sale['paid_amount'] - $alreadyRefunded, 2);
+            $refundable = round((float) $sale['paid_amount'] - $returnCredits - $alreadyRefunded, 2);
 
             if ($amount > $refundable + 0.004) {
                 throw new \RuntimeException(

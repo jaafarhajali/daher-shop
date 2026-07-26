@@ -53,7 +53,11 @@ final class ReturnController extends Controller
             $sale = null;
         }
 
-        $this->render('returns/create', ['sale' => $sale, 'items' => $items], 'New return');
+        $this->render('returns/create', [
+            'sale'       => $sale,
+            'items'      => $items,
+            'pageScript' => $sale === null ? 'invoice-picker' : null,
+        ], 'New return');
     }
 
     /** POST returns/store */

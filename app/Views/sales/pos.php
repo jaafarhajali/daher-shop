@@ -103,7 +103,7 @@
             <select class="form-select form-select-sm" id="posMethod">
               <option value="cash">Cash</option>
               <option value="card">Card</option>
-              <option value="credit">Credit (دين)</option>
+              <option value="credit">Credit</option>
             </select>
             <div class="form-text text-danger d-none" id="posCreditHint">
               <i class="bi bi-exclamation-circle me-1"></i>Credit sales need a customer.

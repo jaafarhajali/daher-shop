@@ -51,16 +51,15 @@ final class RefundController extends Controller
                 Flash::set('warning', 'Invoice ' . $sale['invoice_no'] . ' is cancelled — refunds are not possible.');
                 $sale = null;
             } else {
-                $refundable = round(
-                    (float) $sale['paid_amount'] - $saleModel->refundedTotal((int) $sale['id']),
-                    2
-                );
+                // Money actually received minus refunds already given.
+                $refundable = (new \App\Models\Finance())->refundableFor((int) $sale['id']);
             }
         }
 
         $this->render('refunds/create', [
             'sale'       => $sale,
             'refundable' => $refundable,
+            'pageScript' => $sale === null ? 'invoice-picker' : null,
         ], 'New refund');
     }
 

@@ -7,7 +7,7 @@ namespace App\Models;
 use App\Core\Model;
 
 /**
- * Customer credit (دين): outstanding balances and payments against invoices.
+ * Customer credit: outstanding balances and payments against invoices.
  *
  * An invoice is "outstanding" while status = completed AND paid_amount < total.
  * Every payment is journaled in customer_payments and added to sales.paid_amount,
@@ -154,21 +154,36 @@ final class CreditPayment extends Model
         );
     }
 
-    /** Purchases / paid / outstanding block for the customer profile. */
+    /**
+     * Purchases / paid / outstanding block for the customer profile.
+     *
+     * purchases   = invoice totals minus return credits (what they truly owe/owed
+     *               after giving goods back)
+     * paid        = MONEY received (return credits are not money, so excluded)
+     * outstanding = still to pay — and purchases − paid = outstanding always holds
+     */
     public function customerTotals(int $customerId): array
     {
         $row = $this->fetch(
-            "SELECT COALESCE(SUM(total),0) AS purchases,
-                    COALESCE(SUM(paid_amount),0) AS paid,
+            "SELECT COALESCE(SUM(total),0) AS gross,
+                    COALESCE(SUM(paid_amount),0) AS paid_incl_credits,
                     COALESCE(SUM(total - paid_amount),0) AS outstanding
              FROM sales
              WHERE customer_id = :c AND status = 'completed'",
             ['c' => $customerId]
         );
+        $returnCredits = (float) $this->fetchValue(
+            "SELECT COALESCE(SUM(cp.amount),0)
+             FROM customer_payments cp
+             JOIN sales s ON s.id = cp.sale_id
+             WHERE cp.method = 'return_credit'
+               AND s.customer_id = :c AND s.status = 'completed'",
+            ['c' => $customerId]
+        );
 
         return [
-            'purchases'   => (float) ($row['purchases'] ?? 0),
-            'paid'        => (float) ($row['paid'] ?? 0),
+            'purchases'   => round((float) ($row['gross'] ?? 0) - $returnCredits, 2),
+            'paid'        => round((float) ($row['paid_incl_credits'] ?? 0) - $returnCredits, 2),
             'outstanding' => (float) ($row['outstanding'] ?? 0),
         ];
     }

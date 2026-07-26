@@ -1,4 +1,4 @@
-# Daher Store — Repair Shop Management System
+# Daher Phone — Repair Shop Management System
 
 **Architecture & Design Document** · 2026-07-25 · PHP 8+ / MySQL (MariaDB) / Apache (XAMPP) / Bootstrap 5
 

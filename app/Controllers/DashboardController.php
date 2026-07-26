@@ -12,10 +12,12 @@ final class DashboardController extends Controller
     public function index(): void
     {
         $m = new Dashboard();
+        $finance = new \App\Models\Finance();
+        $allTime = $finance->summary();
 
         $chartData = [
             'trend'  => $m->salesTrend14d(),
-            'revExp' => $m->revenueVsExpenses6m(),
+            'revExp' => $finance->netRevenueVsExpenses6m(),
             'top'    => array_map(
                 static fn (array $r): array => [
                     'name'    => $r['product_name'],
@@ -33,8 +35,9 @@ final class DashboardController extends Controller
         $this->render('dashboard/index', [
             'todaySales'      => $m->todaySalesTotal(),
             'monthSales'      => $m->monthSalesTotal(),
-            'totalRevenue'    => $m->totalRevenue(),
-            'grossProfit'     => $m->totalGrossProfit(),
+            'totalRevenue'    => $allTime['total_revenue'],
+            'grossProfit'     => $allTime['gross_profit'],
+            'netProfit'       => $allTime['net_profit'],
             'productCount'    => $m->productCount(),
             'lowStockCount'   => $m->lowStockCount(),
             'pendingRepairs'  => $m->pendingRepairCount(),

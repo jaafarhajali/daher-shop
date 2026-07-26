@@ -156,9 +156,13 @@ $isCompleted = $sale['status'] === 'completed';
         <?php endif; ?>
         <div class="pos-total-row grand"><span>Total</span>
           <span><?= e(money($sale['total'])) ?></span></div>
-        <?php if ($isCompleted && ($balanceDue > 0.004 || (float) $sale['paid_amount'] < (float) $sale['total'] || $payments !== [])): ?>
-        <div class="pos-total-row"><span class="text-secondary">Paid</span>
-          <span class="data text-success"><?= e(money($sale['paid_amount'])) ?></span></div>
+        <?php if ($isCompleted && ($balanceDue > 0.004 || (float) $sale['paid_amount'] < (float) $sale['total'] || $payments !== [] || $returnCredit > 0.004)): ?>
+        <div class="pos-total-row"><span class="text-secondary">Paid (money received)</span>
+          <span class="data text-success"><?= e(money($moneyReceived)) ?></span></div>
+        <?php if ($returnCredit > 0.004): ?>
+        <div class="pos-total-row"><span class="text-secondary">Return credit</span>
+          <span class="data"><?= e(money($returnCredit)) ?></span></div>
+        <?php endif; ?>
         <div class="pos-total-row"><span class="text-secondary">Balance due</span>
           <span class="data fw-bold <?= $balanceDue > 0.004 ? 'text-danger' : 'text-success' ?>">
             <?= e(money($balanceDue)) ?>

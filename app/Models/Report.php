@@ -21,10 +21,11 @@ use App\Core\Model;
 final class Report extends Model
 {
     public const TYPES = [
+        'finance'         => 'Financial summary',
         'sales-daily'     => 'Sales by day',
         'sales-list'      => 'Sales — detailed list',
         'profit'          => 'Profit by day (sales + repairs)',
-        'credit-out'      => 'Outstanding customer credit (دين)',
+        'credit-out'      => 'Outstanding customer credit',
         'credit-payments' => 'Credit payments received',
         'returns'         => 'Product returns',
         'refunds'         => 'Money refunds',
@@ -45,6 +46,7 @@ final class Report extends Model
     public function build(string $type, array $p): array
     {
         return match ($type) {
+            'finance'         => $this->financeSummary($p),
             'sales-daily'     => $this->salesDaily($p),
             'sales-list'      => $this->salesList($p),
             'profit'          => $this->profitDaily($p),
@@ -66,68 +68,83 @@ final class Report extends Model
 
     // ------------------------------------------------------------- reports --
 
+    /**
+     * Sales by day — same definitions as the dashboard (Finance model):
+     * deductions = refunds + return credits; COGS is net of returned goods.
+     */
     private function salesDaily(array $p): array
     {
-        $rows = $this->fetchAll(
-            "SELECT DATE(created_at) AS sale_date,
-                    COUNT(*) AS orders,
-                    SUM(subtotal) AS subtotal,
-                    SUM(discount) AS discount,
-                    SUM(total) AS revenue,
-                    SUM(total_cost) AS cost,
-                    SUM(total - total_cost) AS profit
-             FROM sales
-             WHERE status = 'completed' AND DATE(created_at) BETWEEN :f AND :t
-             GROUP BY DATE(created_at)
-             ORDER BY sale_date",
-            ['f' => $p['from'], 't' => $p['to']]
-        );
+        $days = (new Finance())->dailyComponents($p['from'], $p['to']);
 
-        // Refunds issued per day reduce that day's net revenue.
-        $refundRows = $this->fetchAll(
-            'SELECT DATE(created_at) AS d, SUM(amount) AS t
-             FROM refunds
-             WHERE DATE(created_at) BETWEEN :f AND :t
-             GROUP BY DATE(created_at)',
-            ['f' => $p['from'], 't' => $p['to']]
-        );
-        $refundsByDay = array_column($refundRows, 't', 'd');
-
-        foreach ($rows as &$row) {
-            $refunded = (float) ($refundsByDay[$row['sale_date']] ?? 0);
-            $row['refunds'] = round($refunded, 2);
-            $row['net_revenue'] = round((float) $row['revenue'] - $refunded, 2);
-            unset($refundsByDay[$row['sale_date']]);
-        }
-        unset($row);
-
-        // Days with refunds but no sales still belong in the report.
-        foreach ($refundsByDay as $day => $amount) {
+        $rows = [];
+        foreach ($days as $d => $v) {
+            $gross = $v['gross_sales'] ?? 0;
+            $deductions = ($v['refunds'] ?? 0) + ($v['return_credits'] ?? 0);
+            $cogsNet = ($v['cogs_sold'] ?? 0) - ($v['cogs_returned'] ?? 0);
+            $netRevenue = $gross - $deductions;
+            // Skip days that only carry repair/expense activity — those belong
+            // to the profit report; this one is about product sales.
+            if ($gross == 0.0 && $deductions == 0.0) {
+                continue;
+            }
             $rows[] = [
-                'sale_date' => $day, 'orders' => 0, 'subtotal' => 0, 'discount' => 0,
-                'revenue' => 0, 'cost' => 0, 'profit' => 0,
-                'refunds' => round((float) $amount, 2),
-                'net_revenue' => round(-(float) $amount, 2),
+                'sale_date'   => $d,
+                'orders'      => (int) ($v['orders'] ?? 0),
+                'gross_sales' => round($gross, 2),
+                'deductions'  => round($deductions, 2),
+                'net_revenue' => round($netRevenue, 2),
+                'cogs'        => round($cogsNet, 2),
+                'profit'      => round($netRevenue - $cogsNet, 2),
             ];
         }
-        usort($rows, static fn (array $a, array $b): int => strcmp((string) $a['sale_date'], (string) $b['sale_date']));
 
         return [
             'title'   => 'Sales by day',
             'columns' => [
                 'sale_date'   => ['label' => 'Date'],
                 'orders'      => ['label' => 'Orders', 'num' => true],
-                'subtotal'    => ['label' => 'Subtotal', 'money' => true],
-                'discount'    => ['label' => 'Discounts', 'money' => true],
-                'revenue'     => ['label' => 'Revenue', 'money' => true],
-                'refunds'     => ['label' => 'Refunds', 'money' => true],
+                'gross_sales' => ['label' => 'Gross sales', 'money' => true],
+                'deductions'  => ['label' => 'Refunds + return credits', 'money' => true],
                 'net_revenue' => ['label' => 'Net revenue', 'money' => true],
-                'cost'        => ['label' => 'Cost of goods', 'money' => true],
+                'cogs'        => ['label' => 'Cost of goods (net)', 'money' => true],
                 'profit'      => ['label' => 'Profit', 'money' => true],
             ],
             'rows'   => $rows,
-            'totals' => $this->sumColumns($rows, ['orders', 'subtotal', 'discount', 'revenue', 'refunds', 'net_revenue', 'cost', 'profit']),
+            'totals' => $this->sumColumns($rows, ['orders', 'gross_sales', 'deductions', 'net_revenue', 'cogs', 'profit']),
             'chart'  => ['x' => 'sale_date', 'y' => 'net_revenue', 'label' => 'Net revenue'],
+        ];
+    }
+
+    /** One-page financial statement for the chosen period. */
+    private function financeSummary(array $p): array
+    {
+        $s = (new Finance())->summary($p['from'], $p['to']);
+
+        $rows = [
+            ['metric' => 'Gross sales',            'amount' => $s['gross_sales'],    'explanation' => 'All completed sale invoices'],
+            ['metric' => 'Refunds',                'amount' => -$s['refunds'],       'explanation' => 'Money given back to customers'],
+            ['metric' => 'Return credits',         'amount' => -$s['return_credits'],'explanation' => 'Sale value cancelled by returned goods on unpaid invoices'],
+            ['metric' => 'Net sales',              'amount' => $s['net_sales'],      'explanation' => 'Gross sales minus refunds and return credits'],
+            ['metric' => 'Repair income',          'amount' => $s['repair_revenue'], 'explanation' => 'Delivered repair tickets'],
+            ['metric' => 'Total revenue',          'amount' => $s['total_revenue'],  'explanation' => 'Net sales + repair income'],
+            ['metric' => 'Cost of goods sold',     'amount' => -$s['cogs_sold'],     'explanation' => 'Cost of every item sold (frozen at sale time)'],
+            ['metric' => 'Cost of returned goods', 'amount' => $s['cogs_returned'],  'explanation' => 'Returned items went back to stock, so their cost is recovered'],
+            ['metric' => 'Repair parts cost',      'amount' => -($s['repair_revenue'] - $s['repair_profit']), 'explanation' => 'What the shop paid for parts on delivered repairs'],
+            ['metric' => 'Gross profit',           'amount' => $s['gross_profit'],   'explanation' => 'Total revenue minus all costs of goods and parts'],
+            ['metric' => 'Expenses',               'amount' => -$s['expenses'],      'explanation' => 'Rent, electricity, salaries and other operating costs'],
+            ['metric' => 'NET PROFIT',             'amount' => $s['net_profit'],     'explanation' => 'What the shop actually earned in this period'],
+        ];
+
+        return [
+            'title'   => 'Financial summary',
+            'columns' => [
+                'metric'      => ['label' => 'Metric'],
+                'amount'      => ['label' => 'Amount', 'money' => true],
+                'explanation' => ['label' => 'What it means'],
+            ],
+            'rows'   => $rows,
+            'totals' => [],
+            'chart'  => null,
         ];
     }
 
@@ -184,83 +201,49 @@ final class Report extends Model
         ];
     }
 
+    /**
+     * Profit by day — identical arithmetic to the dashboard (Finance model):
+     * sales profit is net of deductions AND credits back the cost of
+     * returned goods; expenses land on their own day.
+     */
     private function profitDaily(array $p): array
     {
-        // One row per day: sales profit + repair profit (repairs count on delivery day).
-        $sales = $this->fetchAll(
-            "SELECT DATE(created_at) AS d,
-                    SUM(total) AS revenue,
-                    SUM(total - total_cost) AS profit
-             FROM sales
-             WHERE status = 'completed' AND DATE(created_at) BETWEEN :f AND :t
-             GROUP BY DATE(created_at)",
-            ['f' => $p['from'], 't' => $p['to']]
-        );
-        $repairs = $this->fetchAll(
-            "SELECT DATE(r.delivered_at) AS d,
-                    SUM(r.total_cost) AS revenue,
-                    SUM(r.total_cost - IFNULL(pc.cost, 0)) AS profit
-             FROM repairs r
-             LEFT JOIN (
-                SELECT repair_id, SUM(unit_cost * quantity) AS cost
-                FROM repair_parts GROUP BY repair_id
-             ) pc ON pc.repair_id = r.id
-             WHERE r.status = 'delivered' AND r.delivered_at IS NOT NULL
-               AND DATE(r.delivered_at) BETWEEN :f AND :t
-             GROUP BY DATE(r.delivered_at)",
-            ['f' => $p['from'], 't' => $p['to']]
-        );
-
-        $refundRows = $this->fetchAll(
-            'SELECT DATE(created_at) AS d, SUM(amount) AS t
-             FROM refunds
-             WHERE DATE(created_at) BETWEEN :f AND :t
-             GROUP BY DATE(created_at)',
-            ['f' => $p['from'], 't' => $p['to']]
-        );
-
-        $days = [];
-        foreach ($sales as $row) {
-            $days[$row['d']]['sales_revenue'] = (float) $row['revenue'];
-            $days[$row['d']]['sales_profit'] = (float) $row['profit'];
-        }
-        foreach ($repairs as $row) {
-            $days[$row['d']]['repair_revenue'] = (float) $row['revenue'];
-            $days[$row['d']]['repair_profit'] = (float) $row['profit'];
-        }
-        foreach ($refundRows as $row) {
-            $days[$row['d']]['refunds'] = (float) $row['t'];
-        }
-        ksort($days);
+        $days = (new Finance())->dailyComponents($p['from'], $p['to']);
 
         $rows = [];
         foreach ($days as $d => $v) {
-            $gross = ($v['sales_profit'] ?? 0) + ($v['repair_profit'] ?? 0);
+            $netSales = ($v['gross_sales'] ?? 0)
+                      - ($v['refunds'] ?? 0) - ($v['return_credits'] ?? 0);
+            $cogsNet = ($v['cogs_sold'] ?? 0) - ($v['cogs_returned'] ?? 0);
+            $salesProfit = $netSales - $cogsNet;
+            $repairProfit = ($v['repair_revenue'] ?? 0) - ($v['repair_parts_cost'] ?? 0);
+            $expenses = $v['expenses'] ?? 0;
+
             $rows[] = [
-                'day'            => $d,
-                'sales_revenue'  => $v['sales_revenue'] ?? 0,
-                'sales_profit'   => $v['sales_profit'] ?? 0,
-                'repair_revenue' => $v['repair_revenue'] ?? 0,
-                'repair_profit'  => $v['repair_profit'] ?? 0,
-                'refunds'        => $v['refunds'] ?? 0,
-                'total_profit'   => round($gross - ($v['refunds'] ?? 0), 2),
+                'day'           => $d,
+                'net_sales'     => round($netSales, 2),
+                'sales_profit'  => round($salesProfit, 2),
+                'repair_profit' => round($repairProfit, 2),
+                'gross_profit'  => round($salesProfit + $repairProfit, 2),
+                'expenses'      => round($expenses, 2),
+                'net_profit'    => round($salesProfit + $repairProfit - $expenses, 2),
             ];
         }
 
         return [
             'title'   => 'Profit by day',
             'columns' => [
-                'day'            => ['label' => 'Date'],
-                'sales_revenue'  => ['label' => 'Sales revenue', 'money' => true],
-                'sales_profit'   => ['label' => 'Sales profit', 'money' => true],
-                'repair_revenue' => ['label' => 'Repair revenue', 'money' => true],
-                'repair_profit'  => ['label' => 'Repair profit', 'money' => true],
-                'refunds'        => ['label' => 'Refunds', 'money' => true],
-                'total_profit'   => ['label' => 'Net profit', 'money' => true],
+                'day'           => ['label' => 'Date'],
+                'net_sales'     => ['label' => 'Net sales', 'money' => true],
+                'sales_profit'  => ['label' => 'Sales profit', 'money' => true],
+                'repair_profit' => ['label' => 'Repair profit', 'money' => true],
+                'gross_profit'  => ['label' => 'Gross profit', 'money' => true],
+                'expenses'      => ['label' => 'Expenses', 'money' => true],
+                'net_profit'    => ['label' => 'Net profit', 'money' => true],
             ],
             'rows'   => $rows,
-            'totals' => $this->sumColumns($rows, ['sales_revenue', 'sales_profit', 'repair_revenue', 'repair_profit', 'refunds', 'total_profit']),
-            'chart'  => ['x' => 'day', 'y' => 'total_profit', 'label' => 'Net profit'],
+            'totals' => $this->sumColumns($rows, ['net_sales', 'sales_profit', 'repair_profit', 'gross_profit', 'expenses', 'net_profit']),
+            'chart'  => ['x' => 'day', 'y' => 'net_profit', 'label' => 'Net profit'],
         ];
     }
 
@@ -292,7 +275,7 @@ final class Report extends Model
         );
 
         return [
-            'title'   => 'Outstanding customer credit (دين)',
+            'title'   => 'Outstanding customer credit',
             'columns' => [
                 'invoice_no'  => ['label' => 'Invoice'],
                 'created_at'  => ['label' => 'Date'],

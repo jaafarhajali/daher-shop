@@ -15,7 +15,7 @@ const DB_USER = 'root';
 const DB_PASS = '';
 
 // --- Application ------------------------------------------------------------
-const APP_NAME  = 'Daher Store';
+const APP_NAME  = 'Daher Phone';
 const APP_VERSION = '1.0.0';
 
 /**

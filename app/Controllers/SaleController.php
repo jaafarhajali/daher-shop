@@ -74,7 +74,7 @@ final class SaleController extends Controller
         if ($method === 'credit' && $customerId < 1) {
             $this->json([
                 'ok'    => false,
-                'error' => 'Credit (دين) sales must have a customer — please select the customer first.',
+                'error' => 'Credit sales must have a customer — please select the customer first.',
             ], 422);
         }
 
@@ -95,6 +95,58 @@ final class SaleController extends Controller
 
         Flash::set('success', 'Sale completed.');
         $this->json(['ok' => true, 'sale_id' => $saleId]);
+    }
+
+    /**
+     * GET sales/search-invoices-json — live invoice picker for Returns/Refunds.
+     * ?q=…&sort=date_desc|date_asc|invoice|customer|total&page=N
+     */
+    public function searchInvoicesJson(): void
+    {
+        $sort = $this->queryString('sort', 'date_desc');
+        if (!in_array($sort, ['date_desc', 'date_asc', 'invoice', 'customer', 'total'], true)) {
+            $sort = 'date_desc';
+        }
+
+        $pg = (new Sale())->searchForPicker(
+            mb_substr($this->queryString('q'), 0, 80),
+            $sort,
+            $this->queryInt('page', 1)
+        );
+
+        $rows = array_map(static function (array $r): array {
+            $paidMeta = paid_status_meta((float) $r['total'], (float) $r['paid_amount']);
+            // Refundable = money actually received (paid minus return credits) − refunds.
+            $refundable = round(
+                (float) $r['paid_amount'] - (float) $r['return_credits'] - (float) $r['refunded'],
+                2
+            );
+
+            return [
+                'id'              => (int) $r['id'],
+                'invoice_no'      => $r['invoice_no'],
+                'date'            => fmt_date($r['created_at'], true),
+                'customer'        => $r['customer_name'],
+                'phone'           => $r['phone'] ?? '',
+                'total_fmt'       => money($r['total']),
+                'paid_fmt'        => money($r['paid_amount']),
+                'refundable'      => max(0.0, $refundable),
+                'refundable_fmt'  => money(max(0, $refundable)),
+                'payment'         => payment_label((string) $r['payment_method']),
+                'pay_label'       => $paidMeta['label'],
+                'pay_color'       => $paidMeta['color'],
+                'has_returnable'  => (bool) $r['has_returnable'],
+                'matched_product' => $r['matched_product'] ?? null,
+            ];
+        }, $pg['rows']);
+
+        $this->json([
+            'ok'    => true,
+            'rows'  => $rows,
+            'page'  => $pg['page'],
+            'pages' => $pg['pages'],
+            'total' => $pg['total'],
+        ]);
     }
 
     /** GET sales/index — sales history. */
@@ -125,15 +177,18 @@ final class SaleController extends Controller
 
         $saleId = (int) $sale['id'];
         $refunded = $m->refundedTotal($saleId);
+        $moneyReceived = (new \App\Models\Finance())->moneyReceived($saleId);
 
         $this->render('sales/show', [
-            'sale'       => $sale,
-            'items'      => $m->items($saleId),
-            'payments'   => (new \App\Models\CreditPayment())->paymentsForSale($saleId),
-            'returns'    => (new \App\Models\ProductReturn())->forSale($saleId),
-            'refunds'    => (new \App\Models\Refund())->forSale($saleId),
-            'refunded'   => $refunded,
-            'refundable' => round((float) $sale['paid_amount'] - $refunded, 2),
+            'sale'          => $sale,
+            'items'         => $m->items($saleId),
+            'payments'      => (new \App\Models\CreditPayment())->paymentsForSale($saleId),
+            'returns'       => (new \App\Models\ProductReturn())->forSale($saleId),
+            'refunds'       => (new \App\Models\Refund())->forSale($saleId),
+            'refunded'      => $refunded,
+            'moneyReceived' => $moneyReceived,
+            'returnCredit'  => round((float) $sale['paid_amount'] - $moneyReceived, 2),
+            'refundable'    => round($moneyReceived - $refunded, 2),
         ], $sale['invoice_no']);
     }
 

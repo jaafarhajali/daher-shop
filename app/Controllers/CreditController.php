@@ -21,7 +21,7 @@ final class CreditController extends Controller
         $this->render('credit/index', [
             'debtors' => $m->debtors(),
             'total'   => $m->totalOutstanding(),
-        ], 'Credit (دين)');
+        ], 'Credit');
     }
 
     /** GET credit/customer — one customer's open invoices + payment form. */

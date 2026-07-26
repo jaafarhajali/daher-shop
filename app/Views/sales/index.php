@@ -49,7 +49,7 @@
           <option value="">All</option>
           <option value="cash" <?= $filters['method'] === 'cash' ? 'selected' : '' ?>>Cash</option>
           <option value="card" <?= $filters['method'] === 'card' ? 'selected' : '' ?>>Card</option>
-          <option value="credit" <?= $filters['method'] === 'credit' ? 'selected' : '' ?>>Credit (دين)</option>
+          <option value="credit" <?= $filters['method'] === 'credit' ? 'selected' : '' ?>>Credit</option>
         </select>
       </div>
       <div class="d-flex gap-2">

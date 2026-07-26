@@ -340,7 +340,7 @@
 
     // A debt needs a debtor — block credit checkout without a customer.
     if ($method.value === 'credit' && !customer) {
-      DS.toast('Credit (دين) sales must have a customer — please select the customer first.', 'danger');
+      DS.toast('Credit sales must have a customer — please select the customer first.', 'danger');
       refreshCreditHint();
       return;
     }

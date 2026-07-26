@@ -123,10 +123,23 @@ final class Customer extends Model
         );
     }
 
+    /** Lifetime value = net sales (after refunds/return credits) + delivered repairs. */
     public function lifetimeValue(int $id): float
     {
         $sales = (float) $this->fetchValue(
             "SELECT COALESCE(SUM(total),0) FROM sales WHERE customer_id = :id AND status = 'completed'",
+            ['id' => $id]
+        );
+        $sales -= (float) $this->fetchValue(
+            "SELECT COALESCE(SUM(cp.amount),0) FROM customer_payments cp
+             JOIN sales s ON s.id = cp.sale_id
+             WHERE cp.method = 'return_credit' AND s.customer_id = :id AND s.status = 'completed'",
+            ['id' => $id]
+        );
+        $sales -= (float) $this->fetchValue(
+            "SELECT COALESCE(SUM(r.amount),0) FROM refunds r
+             JOIN sales s ON s.id = r.sale_id
+             WHERE s.customer_id = :id AND s.status = 'completed'",
             ['id' => $id]
         );
         $repairs = (float) $this->fetchValue(

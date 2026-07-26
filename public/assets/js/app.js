@@ -1,5 +1,5 @@
 /**
- * Daher Store — shared UI behavior.
+ * Daher Phone — shared UI behavior.
  * Theme toggle · sidebar collapse · toasts · delete confirmation ·
  * table quick-filter · keyboard shortcuts.
  */

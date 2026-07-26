@@ -1,5 +1,5 @@
 -- ============================================================================
--- Daher Store — Repair Shop Management System
+-- Daher Phone — Repair Shop Management System
 -- Database schema for MySQL 8+ / MariaDB 10.4+ (XAMPP default)
 --
 -- HOW TO INSTALL:
@@ -284,7 +284,7 @@ CREATE TABLE `settings` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ----------------------------------------------------------------------------
--- customer_payments — money received against credit (دين) invoices
+-- customer_payments — money received against credit invoices
 -- ----------------------------------------------------------------------------
 DROP TABLE IF EXISTS `customer_payments`;
 CREATE TABLE `customer_payments` (
@@ -405,7 +405,7 @@ INSERT INTO `categories` (`name`, `description`) VALUES
 ('Spare Parts',   'Screens, batteries, connectors and repair parts');
 
 INSERT INTO `settings` (`setting_key`, `setting_value`) VALUES
-('shop_name',        'Daher Store'),
+('shop_name',        'Daher Phone'),
 ('shop_address',     ''),
 ('shop_phone',       ''),
 ('shop_email',       ''),

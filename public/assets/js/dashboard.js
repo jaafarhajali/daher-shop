@@ -187,7 +187,7 @@
           datasets: [
             { label: 'Cash',          data: DASH.payMix.cash,   backgroundColor: ink.cat3[0], borderRadius: { topLeft: 4, topRight: 4 }, maxBarThickness: 18 },
             { label: 'Card',          data: DASH.payMix.card,   backgroundColor: ink.cat3[1], borderRadius: { topLeft: 4, topRight: 4 }, maxBarThickness: 18 },
-            { label: 'Credit (دين)',  data: DASH.payMix.credit, backgroundColor: ink.cat3[2], borderRadius: { topLeft: 4, topRight: 4 }, maxBarThickness: 18 }
+            { label: 'Credit',  data: DASH.payMix.credit, backgroundColor: ink.cat3[2], borderRadius: { topLeft: 4, topRight: 4 }, maxBarThickness: 18 }
           ]
         },
         options: optsMix

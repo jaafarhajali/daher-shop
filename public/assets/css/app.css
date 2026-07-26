@@ -1,5 +1,5 @@
 /* ============================================================================
-   Daher Store — application design system
+   Daher Phone — application design system
    Layered on top of Bootstrap 5.3. Two themes via [data-bs-theme].
    Signature elements:
      · "trace" motif — solder-pad timeline + active sidebar trace
@@ -491,6 +491,27 @@ a:hover { color: var(--ds-accent-hover); }
   padding: 1rem;
 }
 .login-card { width: 100%; max-width: 400px; }
+
+/* ---------------------------------------------------------- invoice picker -- */
+
+.invoice-picker mark {
+  background: var(--ds-accent-soft);
+  color: inherit;
+  padding: 0 0.12em;
+  border-radius: 3px;
+}
+
+.invoice-picker .table-responsive { min-height: 180px; }
+
+.ip-loading {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, var(--ds-card) 72%, transparent);
+  z-index: 5;
+}
 
 /* invoice / receipt print */
 @media print {

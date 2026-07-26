@@ -111,7 +111,7 @@ function payment_label(string $method): string
     return match ($method) {
         'cash'          => 'Cash',
         'card'          => 'Card',
-        'credit'        => 'Credit (دين)',
+        'credit'        => 'Credit',
         'return_credit' => 'Return credit',
         'bank_transfer' => 'Bank transfer',
         default         => 'Other',
@@ -148,7 +148,7 @@ function paid_status_meta(float $total, float $paid): array
         return ['label' => 'Partially paid', 'color' => 'warning', 'outstanding' => $outstanding];
     }
 
-    return ['label' => 'Unpaid (دين)', 'color' => 'danger', 'outstanding' => $outstanding];
+    return ['label' => 'Unpaid', 'color' => 'danger', 'outstanding' => $outstanding];
 }
 
 /**

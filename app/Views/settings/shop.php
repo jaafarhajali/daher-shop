@@ -27,7 +27,7 @@ $v = static fn (string $key, string $default = '') => old($key, $values[$key] ??
             <div class="col-12">
               <label class="form-label" for="shName">Shop name <span class="text-danger">*</span></label>
               <input class="form-control" id="shName" name="shop_name" required maxlength="100"
-                     value="<?= $v('shop_name', 'Daher Store') ?>">
+                     value="<?= $v('shop_name', 'Daher Phone') ?>">
             </div>
             <div class="col-12">
               <label class="form-label" for="shAddress">Address</label>
