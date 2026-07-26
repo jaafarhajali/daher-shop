@@ -89,16 +89,19 @@ $val = static fn (string $key, $fallback = '') => old($key, $isEdit ? ($product[
               </div>
             </div>
             <div class="col-md-4">
-              <label class="form-label" for="pPrice">Selling price <span class="text-secondary">(optional)</span></label>
+              <label class="form-label" for="pPrice">Default selling price <span class="text-secondary">(optional)</span></label>
               <div class="input-group">
                 <span class="input-group-text"><?= e(setting('currency_symbol', '$')) ?></span>
                 <input class="form-control data" id="pPrice" name="selling_price" type="number"
                        step="0.01" min="0" placeholder="Not set yet" value="<?= $val('selling_price') ?>">
               </div>
-              <div class="form-text">Leave empty if unknown — the product cannot be sold until a price is set.</div>
+              <div class="form-text">
+                A suggestion only — the till can change the actual price on every sale.
+                If empty, the cashier must type a price at checkout.
+              </div>
             </div>
             <div class="col-md-4">
-              <label class="form-label">Profit per item</label>
+              <label class="form-label">Margin at default price</label>
               <div class="form-control-plaintext data fw-semibold" id="pProfit">—</div>
             </div>
           </div>

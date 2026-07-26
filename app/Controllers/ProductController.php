@@ -182,8 +182,9 @@ final class ProductController extends Controller
                 'id'       => (int) $p['id'],
                 'name'     => $p['name'],
                 'barcode'  => $p['barcode'],
-                // null = no selling price yet — the POS blocks these with a message
+                // null = no default price yet — the POS asks for a price in the cart
                 'price'    => $p['selling_price'] === null ? null : (float) $p['selling_price'],
+                'cost'     => (float) $p['cost_price'],
                 'stock'    => (int) $p['quantity'],
                 'warranty' => (int) ($p['warranty_days'] ?? 0),
             ], $items),

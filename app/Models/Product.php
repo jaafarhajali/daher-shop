@@ -234,7 +234,7 @@ final class Product extends Model
     public function posSearch(string $q, int $limit = 12): array
     {
         return $this->fetchAll(
-            'SELECT id, name, barcode, selling_price, quantity, warranty_days
+            'SELECT id, name, barcode, selling_price, cost_price, quantity, warranty_days
              FROM products
              WHERE is_active = 1
                AND quantity > 0
@@ -249,7 +249,7 @@ final class Product extends Model
     public function findByBarcode(string $barcode): ?array
     {
         return $this->fetch(
-            'SELECT id, name, barcode, selling_price, quantity, warranty_days
+            'SELECT id, name, barcode, selling_price, cost_price, quantity, warranty_days
              FROM products
              WHERE is_active = 1 AND barcode = :b',
             ['b' => $barcode]

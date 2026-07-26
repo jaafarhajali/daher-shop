@@ -1,11 +1,17 @@
 /**
  * Point of Sale — cart state, live search, customer picker, checkout.
+ *
+ * Pricing model (v1.2):
+ *   · every product has an optional DEFAULT selling price (suggestion only)
+ *   · the cart line holds the ACTUAL sale price — editable per sale
+ *   · unpriced products can be added; the till must type a price before checkout
+ *   · selling below cost asks for confirmation
  */
 (function () {
   'use strict';
 
   var CUR = (window.POS && POS.currency) || '$';
-  var cart = [];                     // {id, name, price, qty, stock}
+  var cart = [];   // {id, name, price|null, defaultPrice|null, cost, qty, stock}
   var customer = (window.POS && POS.customer) || null;
 
   var $search = document.getElementById('posSearch');
@@ -71,23 +77,25 @@
     items.forEach(function (p) {
       var noPrice = p.price === null || p.price === undefined;
       var el = document.createElement('div');
-      el.className = 'pos-product' + (noPrice ? ' opacity-75' : '');
+      el.className = 'pos-product';
       el.innerHTML =
         '<div class="min-w-0">' +
           '<div class="fw-semibold text-truncate"></div>' +
           '<div class="small text-secondary"><span class="data"></span> in stock' +
           (p.barcode ? ' · <span class="data barcode"></span>' : '') + '</div>' +
         '</div>' +
-        '<div class="data fw-semibold text-accent"></div>';
+        '<div class="text-end"></div>';
       el.querySelector('.fw-semibold.text-truncate').textContent = p.name;
       el.querySelector('.small .data').textContent = p.stock;
       if (p.barcode) el.querySelector('.barcode').textContent = p.barcode;
-      var priceEl = el.querySelector('.data.fw-semibold.text-accent');
+
+      var right = el.querySelector('.text-end');
       if (noPrice) {
-        priceEl.className = 'badge text-bg-danger';
-        priceEl.textContent = 'No price';
+        right.innerHTML = '<span class="badge text-bg-warning">Set price at checkout</span>';
       } else {
-        priceEl.textContent = CUR + DS.money(p.price);
+        right.innerHTML = '<div class="data fw-semibold text-accent"></div>' +
+                          '<div class="small text-secondary">default</div>';
+        right.querySelector('.data').textContent = CUR + DS.money(p.price);
       }
       el.addEventListener('click', function () { addToCart(p); });
       $results.appendChild(el);
@@ -96,11 +104,7 @@
 
   // ------------------------------------------------------------- cart ----
   function addToCart(p) {
-    // Products without a selling price cannot be sold (server enforces it too).
-    if (p.price === null || p.price === undefined) {
-      DS.toast('This product does not have a selling price. Please enter a selling price before completing the sale.', 'danger');
-      return;
-    }
+    var noPrice = p.price === null || p.price === undefined;
     var line = cart.find(function (l) { return l.id === p.id; });
     if (line) {
       if (line.qty + 1 > p.stock) {
@@ -109,7 +113,18 @@
       }
       line.qty += 1;
     } else {
-      cart.push({ id: p.id, name: p.name, price: p.price, qty: 1, stock: p.stock });
+      cart.push({
+        id: p.id,
+        name: p.name,
+        price: noPrice ? null : p.price,        // ACTUAL sale price (editable)
+        defaultPrice: noPrice ? null : p.price, // suggestion from the catalog
+        cost: Number(p.cost) || 0,
+        qty: 1,
+        stock: p.stock
+      });
+      if (noPrice) {
+        DS.toast('"' + p.name + '" has no selling price — type one in the cart before completing the sale.', 'warning');
+      }
     }
     renderCart();
   }
@@ -122,23 +137,52 @@
     } else {
       $body.innerHTML = '';
       cart.forEach(function (line, i) {
+        var priceMissing = line.price === null;
+        var belowCost = !priceMissing && line.cost > 0 && line.price < line.cost;
+
         var tr = document.createElement('tr');
         tr.innerHTML =
-          '<td class="text-truncate" style="max-width:150px"></td>' +
+          '<td style="max-width:150px">' +
+            '<div class="text-truncate line-name"></div>' +
+            '<div class="small line-hint"></div>' +
+          '</td>' +
           '<td><div class="input-group input-group-sm">' +
             '<button class="btn btn-outline-secondary btn-qty-minus" type="button">−</button>' +
             '<input class="form-control data text-center cart-qty-input" type="number" min="1" value="' + line.qty + '">' +
             '<button class="btn btn-outline-secondary btn-qty-plus" type="button">+</button>' +
           '</div></td>' +
           '<td><input class="form-control form-control-sm data text-end cart-price-input" ' +
-                'type="number" min="0" step="0.01" value="' + line.price + '"></td>' +
+                'type="number" min="0" step="0.01" placeholder="price"></td>' +
           '<td class="num line-total"></td>' +
           '<td><button class="btn btn-link text-danger p-0 btn-remove" type="button" title="Remove">' +
             '<i class="bi bi-x-lg"></i></button></td>';
 
-        tr.querySelector('td').textContent = line.name;
-        tr.querySelector('td').title = line.name;
-        tr.querySelector('.line-total').textContent = CUR + DS.money(line.price * line.qty);
+        var nameEl = tr.querySelector('.line-name');
+        nameEl.textContent = line.name;
+        nameEl.title = line.name;
+
+        // Hint under the name: missing price / edited vs default.
+        var hint = tr.querySelector('.line-hint');
+        if (priceMissing) {
+          hint.className = 'small line-hint text-danger';
+          hint.textContent = 'enter a sale price';
+        } else if (belowCost) {
+          hint.className = 'small line-hint text-warning-emphasis';
+          hint.textContent = 'below cost ' + CUR + DS.money(line.cost);
+        } else if (line.defaultPrice !== null && Number(line.price) !== Number(line.defaultPrice)) {
+          hint.className = 'small line-hint text-secondary';
+          hint.textContent = 'default ' + CUR + DS.money(line.defaultPrice);
+        } else {
+          hint.remove();
+        }
+
+        var priceInput = tr.querySelector('.cart-price-input');
+        priceInput.value = priceMissing ? '' : line.price;
+        if (priceMissing) priceInput.classList.add('border-danger');
+        if (belowCost) priceInput.classList.add('border-warning');
+
+        tr.querySelector('.line-total').textContent =
+          priceMissing ? '—' : CUR + DS.money(line.price * line.qty);
 
         tr.querySelector('.btn-qty-minus').addEventListener('click', function () {
           line.qty > 1 ? (line.qty--, renderCart()) : removeLine(i);
@@ -156,8 +200,9 @@
           line.qty = Math.max(1, v);
           renderCart();
         });
-        tr.querySelector('.cart-price-input').addEventListener('change', function (ev) {
-          line.price = Math.max(0, parseFloat(ev.target.value) || 0);
+        priceInput.addEventListener('change', function (ev) {
+          var raw = ev.target.value;
+          line.price = raw === '' ? null : Math.max(0, parseFloat(raw) || 0);
           renderCart();
         });
         tr.querySelector('.btn-remove').addEventListener('click', function () { removeLine(i); });
@@ -174,11 +219,17 @@
   }
 
   function refreshTotals() {
-    var subtotal = cart.reduce(function (sum, l) { return sum + l.price * l.qty; }, 0);
+    var priced = cart.filter(function (l) { return l.price !== null; });
+    var missing = cart.length - priced.length;
+    var subtotal = priced.reduce(function (sum, l) { return sum + l.price * l.qty; }, 0);
     var discount = Math.min(Math.max(0, parseFloat($discount.value) || 0), subtotal);
+
     $subtotal.textContent = CUR + DS.money(subtotal);
     $total.textContent = CUR + DS.money(subtotal - discount);
-    $checkout.disabled = cart.length === 0;
+    $checkout.disabled = cart.length === 0 || missing > 0;
+    $checkout.title = missing > 0
+      ? 'Enter a sale price for every item first'
+      : '';
   }
 
   $discount.addEventListener('input', refreshTotals);
@@ -262,6 +313,13 @@
   function checkout() {
     if (!cart.length || $checkout.disabled) return;
 
+    // Every line needs a real sale price before the invoice can exist.
+    var unpriced = cart.filter(function (l) { return l.price === null; });
+    if (unpriced.length) {
+      DS.toast('This product does not have a selling price. Please enter a selling price before completing the sale. (' + unpriced[0].name + ')', 'danger');
+      return;
+    }
+
     // A debt needs a debtor — block credit checkout without a customer.
     if ($method.value === 'credit' && !customer) {
       DS.toast('Credit (دين) sales must have a customer — please select the customer first.', 'danger');
@@ -269,6 +327,22 @@
       return;
     }
 
+    // Selling below cost is allowed, but never silently.
+    var belowCost = cart.filter(function (l) { return l.cost > 0 && l.price < l.cost; });
+    if (belowCost.length) {
+      var msg = belowCost.length === 1
+        ? 'Warning: "' + belowCost[0].name + '" is being sold below cost price. Continue?'
+        : 'Warning: ' + belowCost.length + ' products are being sold below cost price. Continue?';
+      DS.confirm(msg).then(function (ok) {
+        if (ok) submitSale();
+      });
+      return;
+    }
+
+    submitSale();
+  }
+
+  function submitSale() {
     $checkout.disabled = true;
     $spinner.classList.remove('d-none');
 
@@ -278,7 +352,7 @@
       return { id: l.id, qty: l.qty, price: l.price };
     })));
     form.append('discount', parseFloat($discount.value) || 0);
-    form.append('payment_method', document.getElementById('posMethod').value);
+    form.append('payment_method', $method.value);
     form.append('notes', document.getElementById('posNotes').value);
     form.append('customer_id', customer ? customer.id : 0);
 

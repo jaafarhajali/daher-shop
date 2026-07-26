@@ -79,8 +79,8 @@ $sortLink = static function (string $key, string $label) use ($filters): string 
           <th><?= $sortLink('name', 'Product') ?></th>
           <th><?= $sortLink('category', 'Category') ?></th>
           <th class="num"><?= $sortLink('cost_price', 'Cost') ?></th>
-          <th class="num"><?= $sortLink('selling_price', 'Price') ?></th>
-          <th class="num">Profit</th>
+          <th class="num"><?= $sortLink('selling_price', 'Default price') ?></th>
+          <th class="num">Margin</th>
           <th style="min-width:130px"><?= $sortLink('quantity', 'Stock') ?></th>
           <th style="width:110px" class="text-end">Actions</th>
         </tr>

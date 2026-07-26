@@ -153,6 +153,12 @@ final class Repair extends Model
                 $name = (string) $product['name'];
                 $unitCost = (float) $product['cost_price'];
                 if ($unitPrice <= 0) {
+                    if ($product['selling_price'] === null) {
+                        throw new \RuntimeException(
+                            '"' . $name . '" has no selling price yet — set one on the product, '
+                            . 'or add it as an external part with a custom charge.'
+                        );
+                    }
                     $unitPrice = (float) $product['selling_price'];
                 }
 

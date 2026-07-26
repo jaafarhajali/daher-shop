@@ -9,6 +9,22 @@ reports, and backups.
 
 ---
 
+## What's new in v1.2 — flexible sale pricing
+
+- Every product's price is now a **default selling price** — a suggestion, never a lock.
+  The till can change the **actual sale price** on every cart line; the cart shows the
+  default underneath whenever the price was edited.
+- Products **without** a default price can still be added in the POS — the cashier just
+  types the price in the cart (checkout stays blocked until every line has one).
+- Selling **below cost** asks for confirmation first:
+  *"Warning: … is being sold below cost price. Continue?"*
+- Nothing changed in the numbers' foundations, because the schema already separated the
+  concepts: `sale_items.unit_price` is the actual transaction price and
+  `sale_items.unit_cost` the cost frozen at sale time (the spec's
+  `actual_sale_price` / `purchase_cost_at_sale` — same columns, original names).
+  Old invoices never change when a default price changes, and every report computes
+  from the frozen transaction values. **No database migration is needed for v1.2.**
+
 ## What's new in v1.1
 
 | Feature | Where |

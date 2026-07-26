@@ -36,21 +36,25 @@ final class Sale extends Model
                     throw new \RuntimeException('A product in the cart no longer exists.');
                 }
 
-                // Products without a selling price cannot be invoiced.
-                if ($product['selling_price'] === null) {
-                    throw new \RuntimeException(
-                        'This product does not have a selling price. Please enter a selling '
-                        . 'price before completing the sale. (' . $product['name'] . ')'
-                    );
-                }
-
                 $qty = (int) $item['quantity'];
                 if ($qty < 1) {
                     throw new \RuntimeException('Quantities must be at least 1.');
                 }
 
-                // Price may be overridden at the till; cost is always the DB truth.
-                $unitPrice = round(max(0.0, (float) $item['unit_price']), 2);
+                // The ACTUAL sale price is whatever the till submits (the product's
+                // default is only a suggestion). Cost is always the DB truth.
+                if ((float) $item['unit_price'] < 0) {
+                    throw new \RuntimeException('Sale prices cannot be negative.');
+                }
+                $unitPrice = round((float) $item['unit_price'], 2);
+
+                // A product with no default price needs a real price typed at the till.
+                if ($product['selling_price'] === null && $unitPrice <= 0) {
+                    throw new \RuntimeException(
+                        'This product does not have a selling price. Please enter a selling '
+                        . 'price before completing the sale. (' . $product['name'] . ')'
+                    );
+                }
                 $unitCost = (float) $product['cost_price'];
                 $lineTotal = round($unitPrice * $qty, 2);
 

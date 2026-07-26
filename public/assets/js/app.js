@@ -106,9 +106,38 @@
     }
   });
 
+  // Programmatic confirmation for JS flows (e.g. POS below-cost warning):
+  //   DS.confirm('message').then(function (ok) { ... })
+  var pendingResolve = null;
+
+  function dsConfirm(message) {
+    if (!confirmModal) {
+      return Promise.resolve(window.confirm(message));
+    }
+    return new Promise(function (resolve) {
+      pendingResolve = resolve;
+      document.getElementById('confirmModalText').textContent = message;
+      confirmModal.show();
+    });
+  }
+
+  if (confirmModalEl) {
+    confirmModalEl.addEventListener('hidden.bs.modal', function () {
+      // Dismissed without pressing "Yes" → resolve as declined.
+      if (pendingResolve) { pendingResolve(false); pendingResolve = null; }
+    });
+  }
+
   var confirmYes = document.getElementById('confirmModalYes');
   if (confirmYes) {
     confirmYes.addEventListener('click', function () {
+      if (pendingResolve) {
+        var resolve = pendingResolve;
+        pendingResolve = null;
+        confirmModal.hide();
+        resolve(true);
+        return;
+      }
       if (pendingForm) {
         pendingForm.dataset.confirmed = '1';
         confirmModal.hide();
@@ -148,6 +177,7 @@
   // --- shared helpers -----------------------------------------------------------
   window.DS = {
     toast: toast,
+    confirm: dsConfirm,
     money: function (n) {
       return (Math.round((Number(n) || 0) * 100) / 100).toFixed(2);
     },
