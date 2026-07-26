@@ -1,0 +1,60 @@
+-- Daher Store database backup
+-- Database: daher_store
+-- Created: 2026-07-25 17:56:59
+
+SET FOREIGN_KEY_CHECKS=0;
+SET NAMES utf8mb4;
+
+DROP TABLE IF EXISTS `categories`;
+CREATE TABLE `categories` (   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,   `name` varchar(100) NOT NULL,   `description` varchar(255) DEFAULT NULL,   `created_at` datetime NOT NULL DEFAULT current_timestamp(),   PRIMARY KEY (`id`),   UNIQUE KEY `uq_categories_name` (`name`) ) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+INSERT INTO `categories` (`id`, `name`, `description`, `created_at`) VALUES (1, 'Mobile Phones', 'Smartphones and feature phones', '2026-07-25 13:31:36');
+INSERT INTO `categories` (`id`, `name`, `description`, `created_at`) VALUES (2, 'Laptops', 'Notebooks and ultrabooks', '2026-07-25 13:31:36');
+INSERT INTO `categories` (`id`, `name`, `description`, `created_at`) VALUES (3, 'Computers', 'Desktop PCs and all-in-ones', '2026-07-25 13:31:36');
+INSERT INTO `categories` (`id`, `name`, `description`, `created_at`) VALUES (4, 'Accessories', 'Cases, chargers, cables, headphones', '2026-07-25 13:31:36');
+INSERT INTO `categories` (`id`, `name`, `description`, `created_at`) VALUES (5, 'Spare Parts', 'Screens, batteries, connectors and repair parts', '2026-07-25 13:31:36');
+
+DROP TABLE IF EXISTS `customers`;
+CREATE TABLE `customers` (   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,   `name` varchar(100) NOT NULL,   `phone` varchar(30) DEFAULT NULL,   `email` varchar(150) DEFAULT NULL,   `address` varchar(255) DEFAULT NULL,   `notes` text DEFAULT NULL,   `created_at` datetime NOT NULL DEFAULT current_timestamp(),   PRIMARY KEY (`id`),   KEY `idx_customers_name` (`name`),   KEY `idx_customers_phone` (`phone`) ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+DROP TABLE IF EXISTS `expenses`;
+CREATE TABLE `expenses` (   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,   `name` varchar(150) NOT NULL,   `category` varchar(50) NOT NULL DEFAULT 'General',   `amount` decimal(12,2) NOT NULL,   `expense_date` date NOT NULL,   `notes` varchar(255) DEFAULT NULL,   `user_id` int(10) unsigned DEFAULT NULL,   `created_at` datetime NOT NULL DEFAULT current_timestamp(),   PRIMARY KEY (`id`),   KEY `idx_expenses_date` (`expense_date`),   KEY `idx_expenses_category` (`category`) ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+DROP TABLE IF EXISTS `products`;
+CREATE TABLE `products` (   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,   `category_id` int(10) unsigned NOT NULL,   `name` varchar(150) NOT NULL,   `description` text DEFAULT NULL,   `barcode` varchar(64) DEFAULT NULL,   `cost_price` decimal(12,2) NOT NULL DEFAULT 0.00,   `selling_price` decimal(12,2) NOT NULL DEFAULT 0.00,   `quantity` int(11) NOT NULL DEFAULT 0,   `min_stock` int(11) NOT NULL DEFAULT 3,   `warranty_months` int(11) NOT NULL DEFAULT 0,   `is_active` tinyint(1) NOT NULL DEFAULT 1,   `created_at` datetime NOT NULL DEFAULT current_timestamp(),   `updated_at` datetime NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),   PRIMARY KEY (`id`),   UNIQUE KEY `uq_products_barcode` (`barcode`),   KEY `idx_products_category` (`category_id`),   KEY `idx_products_name` (`name`),   KEY `idx_products_active` (`is_active`),   CONSTRAINT `fk_products_category` FOREIGN KEY (`category_id`) REFERENCES `categories` (`id`) ON UPDATE CASCADE ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+DROP TABLE IF EXISTS `repair_parts`;
+CREATE TABLE `repair_parts` (   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,   `repair_id` int(10) unsigned NOT NULL,   `product_id` int(10) unsigned DEFAULT NULL,   `part_name` varchar(150) NOT NULL,   `quantity` int(11) NOT NULL DEFAULT 1,   `unit_cost` decimal(12,2) NOT NULL DEFAULT 0.00,   `unit_price` decimal(12,2) NOT NULL DEFAULT 0.00,   `created_at` datetime NOT NULL DEFAULT current_timestamp(),   PRIMARY KEY (`id`),   KEY `idx_repair_parts_repair` (`repair_id`),   KEY `idx_repair_parts_product` (`product_id`),   CONSTRAINT `fk_repair_parts_product` FOREIGN KEY (`product_id`) REFERENCES `products` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,   CONSTRAINT `fk_repair_parts_repair` FOREIGN KEY (`repair_id`) REFERENCES `repairs` (`id`) ON DELETE CASCADE ON UPDATE CASCADE ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+DROP TABLE IF EXISTS `repair_status_history`;
+CREATE TABLE `repair_status_history` (   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,   `repair_id` int(10) unsigned NOT NULL,   `status` varchar(20) NOT NULL,   `note` varchar(255) DEFAULT NULL,   `user_id` int(10) unsigned DEFAULT NULL,   `created_at` datetime NOT NULL DEFAULT current_timestamp(),   PRIMARY KEY (`id`),   KEY `idx_rsh_repair` (`repair_id`),   CONSTRAINT `fk_rsh_repair` FOREIGN KEY (`repair_id`) REFERENCES `repairs` (`id`) ON DELETE CASCADE ON UPDATE CASCADE ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+DROP TABLE IF EXISTS `repairs`;
+CREATE TABLE `repairs` (   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,   `ticket_no` varchar(20) NOT NULL,   `customer_id` int(10) unsigned NOT NULL,   `user_id` int(10) unsigned NOT NULL,   `device_type` varchar(50) NOT NULL,   `brand` varchar(50) DEFAULT NULL,   `model` varchar(80) DEFAULT NULL,   `serial_no` varchar(80) DEFAULT NULL,   `problem` text NOT NULL,   `tech_notes` text DEFAULT NULL,   `status` enum('received','diagnosing','repairing','ready','delivered','cancelled') NOT NULL DEFAULT 'received',   `labor_cost` decimal(12,2) NOT NULL DEFAULT 0.00,   `parts_cost` decimal(12,2) NOT NULL DEFAULT 0.00,   `total_cost` decimal(12,2) NOT NULL DEFAULT 0.00,   `paid_amount` decimal(12,2) NOT NULL DEFAULT 0.00,   `received_at` datetime NOT NULL DEFAULT current_timestamp(),   `delivered_at` datetime DEFAULT NULL,   `created_at` datetime NOT NULL DEFAULT current_timestamp(),   `updated_at` datetime NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),   PRIMARY KEY (`id`),   UNIQUE KEY `uq_repairs_ticket` (`ticket_no`),   KEY `idx_repairs_customer` (`customer_id`),   KEY `idx_repairs_status` (`status`),   KEY `idx_repairs_created` (`created_at`),   KEY `fk_repairs_user` (`user_id`),   CONSTRAINT `fk_repairs_customer` FOREIGN KEY (`customer_id`) REFERENCES `customers` (`id`) ON UPDATE CASCADE,   CONSTRAINT `fk_repairs_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON UPDATE CASCADE ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+DROP TABLE IF EXISTS `sale_items`;
+CREATE TABLE `sale_items` (   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,   `sale_id` int(10) unsigned NOT NULL,   `product_id` int(10) unsigned DEFAULT NULL,   `product_name` varchar(150) NOT NULL,   `quantity` int(11) NOT NULL,   `unit_price` decimal(12,2) NOT NULL,   `unit_cost` decimal(12,2) NOT NULL DEFAULT 0.00,   `line_total` decimal(12,2) NOT NULL,   PRIMARY KEY (`id`),   KEY `idx_sale_items_sale` (`sale_id`),   KEY `idx_sale_items_product` (`product_id`),   CONSTRAINT `fk_sale_items_product` FOREIGN KEY (`product_id`) REFERENCES `products` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,   CONSTRAINT `fk_sale_items_sale` FOREIGN KEY (`sale_id`) REFERENCES `sales` (`id`) ON DELETE CASCADE ON UPDATE CASCADE ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+DROP TABLE IF EXISTS `sales`;
+CREATE TABLE `sales` (   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,   `invoice_no` varchar(20) NOT NULL,   `customer_id` int(10) unsigned DEFAULT NULL,   `user_id` int(10) unsigned NOT NULL,   `subtotal` decimal(12,2) NOT NULL DEFAULT 0.00,   `discount` decimal(12,2) NOT NULL DEFAULT 0.00,   `total` decimal(12,2) NOT NULL DEFAULT 0.00,   `total_cost` decimal(12,2) NOT NULL DEFAULT 0.00,   `paid_amount` decimal(12,2) NOT NULL DEFAULT 0.00,   `payment_method` enum('cash','card','bank_transfer','other') NOT NULL DEFAULT 'cash',   `status` enum('completed','cancelled') NOT NULL DEFAULT 'completed',   `notes` varchar(255) DEFAULT NULL,   `created_at` datetime NOT NULL DEFAULT current_timestamp(),   PRIMARY KEY (`id`),   UNIQUE KEY `uq_sales_invoice` (`invoice_no`),   KEY `idx_sales_customer` (`customer_id`),   KEY `idx_sales_user` (`user_id`),   KEY `idx_sales_created` (`created_at`),   KEY `idx_sales_status` (`status`),   CONSTRAINT `fk_sales_customer` FOREIGN KEY (`customer_id`) REFERENCES `customers` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,   CONSTRAINT `fk_sales_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON UPDATE CASCADE ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+DROP TABLE IF EXISTS `settings`;
+CREATE TABLE `settings` (   `setting_key` varchar(50) NOT NULL,   `setting_value` text DEFAULT NULL,   PRIMARY KEY (`setting_key`) ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+INSERT INTO `settings` (`setting_key`, `setting_value`) VALUES ('accent_color', '#0d9488');
+INSERT INTO `settings` (`setting_key`, `setting_value`) VALUES ('currency_position', 'before');
+INSERT INTO `settings` (`setting_key`, `setting_value`) VALUES ('currency_symbol', '$');
+INSERT INTO `settings` (`setting_key`, `setting_value`) VALUES ('date_format', 'd/m/Y');
+INSERT INTO `settings` (`setting_key`, `setting_value`) VALUES ('default_min_stock', '3');
+INSERT INTO `settings` (`setting_key`, `setting_value`) VALUES ('receipt_footer', 'Thank you for your business!');
+INSERT INTO `settings` (`setting_key`, `setting_value`) VALUES ('shop_address', '');
+INSERT INTO `settings` (`setting_key`, `setting_value`) VALUES ('shop_email', '');
+INSERT INTO `settings` (`setting_key`, `setting_value`) VALUES ('shop_name', 'Daher Store');
+INSERT INTO `settings` (`setting_key`, `setting_value`) VALUES ('shop_phone', '');
+
+DROP TABLE IF EXISTS `stock_movements`;
+CREATE TABLE `stock_movements` (   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,   `product_id` int(10) unsigned NOT NULL,   `change_qty` int(11) NOT NULL,   `type` enum('sale','sale_cancel','repair','repair_remove','restock','adjustment','initial') NOT NULL,   `reference` varchar(50) DEFAULT NULL,   `note` varchar(255) DEFAULT NULL,   `user_id` int(10) unsigned DEFAULT NULL,   `created_at` datetime NOT NULL DEFAULT current_timestamp(),   PRIMARY KEY (`id`),   KEY `idx_sm_product` (`product_id`),   KEY `idx_sm_created` (`created_at`),   CONSTRAINT `fk_sm_product` FOREIGN KEY (`product_id`) REFERENCES `products` (`id`) ON DELETE CASCADE ON UPDATE CASCADE ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+DROP TABLE IF EXISTS `users`;
+CREATE TABLE `users` (   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,   `username` varchar(50) NOT NULL,   `password_hash` varchar(255) NOT NULL,   `full_name` varchar(100) NOT NULL,   `email` varchar(150) DEFAULT NULL,   `role` enum('admin','staff') NOT NULL DEFAULT 'staff',   `is_active` tinyint(1) NOT NULL DEFAULT 1,   `last_login_at` datetime DEFAULT NULL,   `created_at` datetime NOT NULL DEFAULT current_timestamp(),   PRIMARY KEY (`id`),   UNIQUE KEY `uq_users_username` (`username`) ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+INSERT INTO `users` (`id`, `username`, `password_hash`, `full_name`, `email`, `role`, `is_active`, `last_login_at`, `created_at`) VALUES (1, 'admin', '$2y$10$40PQLN49AfoleIKcTTfYieMDsXkxv9RCJwvTbKY29I/AWIzJJzjFu', 'Shop Owner', NULL, 'admin', 1, '2026-07-25 15:47:47', '2026-07-25 13:31:36');
+
+SET FOREIGN_KEY_CHECKS=1;

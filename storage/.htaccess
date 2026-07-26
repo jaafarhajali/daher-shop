@@ -1,0 +1,2 @@
+# Backups and logs are never served directly
+Require all denied
