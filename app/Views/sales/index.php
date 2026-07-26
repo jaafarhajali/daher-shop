@@ -49,8 +49,7 @@
           <option value="">All</option>
           <option value="cash" <?= $filters['method'] === 'cash' ? 'selected' : '' ?>>Cash</option>
           <option value="card" <?= $filters['method'] === 'card' ? 'selected' : '' ?>>Card</option>
-          <option value="bank_transfer" <?= $filters['method'] === 'bank_transfer' ? 'selected' : '' ?>>Bank transfer</option>
-          <option value="other" <?= $filters['method'] === 'other' ? 'selected' : '' ?>>Other</option>
+          <option value="credit" <?= $filters['method'] === 'credit' ? 'selected' : '' ?>>Credit (دين)</option>
         </select>
       </div>
       <div class="d-flex gap-2">
@@ -87,9 +86,11 @@
           <td class="num"><?= (int) $s['item_count'] ?></td>
           <td class="small"><?= e(payment_label($s['payment_method'])) ?></td>
           <td>
-            <span class="badge text-bg-<?= $s['status'] === 'completed' ? 'success' : 'danger' ?>">
-              <?= e($s['status']) ?>
-            </span>
+            <?php if ($s['status'] === 'cancelled'): ?>
+              <span class="badge text-bg-danger">cancelled</span>
+            <?php else: $pm = paid_status_meta((float) $s['total'], (float) $s['paid_amount']); ?>
+              <span class="badge text-bg-<?= $pm['color'] ?>"><?= e($pm['label']) ?></span>
+            <?php endif; ?>
           </td>
           <td class="num fw-semibold"><?= e(money($s['total'])) ?></td>
         </tr>

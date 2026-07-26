@@ -1,1 +1,7 @@
 [25-Jul-2026 17:50:17 Asia/Beirut] SQLSTATE[HY093]: Invalid parameter number in C:\xampp\htdocs\daher store\app\Core\Model.php:26
+[26-Jul-2026 15:07:32 Asia/Beirut] SQLSTATE[42S02]: Base table or view not found: 1146 Table 'daher_store.refunds' doesn't exist in C:\xampp\htdocs\daher-shop\app\Core\Model.php:25
+[26-Jul-2026 15:07:37 Asia/Beirut] SQLSTATE[42S02]: Base table or view not found: 1146 Table 'daher_store.product_returns' doesn't exist in C:\xampp\htdocs\daher-shop\app\Core\Model.php:25
+[26-Jul-2026 15:07:39 Asia/Beirut] SQLSTATE[42S02]: Base table or view not found: 1146 Table 'daher_store.product_returns' doesn't exist in C:\xampp\htdocs\daher-shop\app\Core\Model.php:25
+[26-Jul-2026 15:07:43 Asia/Beirut] SQLSTATE[42S02]: Base table or view not found: 1146 Table 'daher_store.product_returns' doesn't exist in C:\xampp\htdocs\daher-shop\app\Core\Model.php:25
+[26-Jul-2026 15:09:26 Asia/Beirut] SQLSTATE[42S02]: Base table or view not found: 1146 Table 'daher_store.product_returns' doesn't exist in C:\xampp\htdocs\daher-shop\app\Core\Model.php:25
+[26-Jul-2026 15:09:32 Asia/Beirut] SQLSTATE[42S02]: Base table or view not found: 1146 Table 'daher_store.product_returns' doesn't exist in C:\xampp\htdocs\daher-shop\app\Core\Model.php:25

@@ -19,6 +19,7 @@ final class ProductController extends Controller
             'q'           => $this->queryString('q'),
             'category_id' => $this->queryInt('category_id'),
             'stock'       => $this->queryString('stock'),
+            'price'       => $this->queryString('price'),
             'sort'        => $this->queryString('sort', 'name'),
             'dir'         => $this->queryString('dir', 'asc'),
         ];
@@ -178,11 +179,13 @@ final class ProductController extends Controller
             'ok'    => true,
             'exact' => $exact !== null,
             'items' => array_map(static fn (array $p): array => [
-                'id'    => (int) $p['id'],
-                'name'  => $p['name'],
-                'barcode' => $p['barcode'],
-                'price' => (float) $p['selling_price'],
-                'stock' => (int) $p['quantity'],
+                'id'       => (int) $p['id'],
+                'name'     => $p['name'],
+                'barcode'  => $p['barcode'],
+                // null = no selling price yet — the POS blocks these with a message
+                'price'    => $p['selling_price'] === null ? null : (float) $p['selling_price'],
+                'stock'    => (int) $p['quantity'],
+                'warranty' => (int) ($p['warranty_days'] ?? 0),
             ], $items),
         ]);
     }
@@ -190,16 +193,17 @@ final class ProductController extends Controller
     /** Shared validation for store/update. @return array<string, mixed> */
     private function validated(): array
     {
+        // Selling price is OPTIONAL (empty = "no price yet"); cost stays mandatory.
         $v = Validator::make($_POST, [
-            'category_id'     => 'required|int',
-            'name'            => 'required|maxlen:150',
-            'description'     => 'maxlen:2000',
-            'barcode'         => 'maxlen:64',
-            'cost_price'      => 'required|numeric|min:0',
-            'selling_price'   => 'required|numeric|min:0',
-            'quantity'        => 'int|min:0',
-            'min_stock'       => 'required|int|min:0',
-            'warranty_months' => 'int|min:0',
+            'category_id'   => 'required|int',
+            'name'          => 'required|maxlen:150',
+            'description'   => 'maxlen:2000',
+            'barcode'       => 'maxlen:64',
+            'cost_price'    => 'required|numeric|min:0',
+            'selling_price' => 'numeric|min:0',
+            'quantity'      => 'int|min:0',
+            'min_stock'     => 'required|int|min:0',
+            'warranty_days' => 'int|min:0',
         ]);
         if ($v->fails()) {
             $this->failBack($v->errors());
@@ -209,16 +213,23 @@ final class ProductController extends Controller
             $this->failBack(['category_id' => 'Please choose a valid category.']);
         }
 
+        // Warranty: empty or 0 = no warranty; otherwise a positive whole number of days.
+        $warrantyRaw = $this->input('warranty_days');
+        $warrantyDays = $warrantyRaw === '' ? 0 : $this->inputInt('warranty_days', -1);
+        if ($warrantyDays < 0 || ($warrantyRaw !== '' && $warrantyRaw !== '0' && $warrantyDays < 1)) {
+            $this->failBack(['warranty_days' => 'Warranty must be a positive number of days (or empty for no warranty).']);
+        }
+
         return [
-            'category_id'     => $this->inputInt('category_id'),
-            'name'            => $this->input('name'),
-            'description'     => $this->input('description'),
-            'barcode'         => $this->input('barcode'),
-            'cost_price'      => $this->inputFloat('cost_price'),
-            'selling_price'   => $this->inputFloat('selling_price'),
-            'quantity'        => max(0, $this->inputInt('quantity')),
-            'min_stock'       => max(0, $this->inputInt('min_stock', (int) setting('default_min_stock', '3'))),
-            'warranty_months' => max(0, $this->inputInt('warranty_months')),
+            'category_id'   => $this->inputInt('category_id'),
+            'name'          => $this->input('name'),
+            'description'   => $this->input('description'),
+            'barcode'       => $this->input('barcode'),
+            'cost_price'    => $this->inputFloat('cost_price'),
+            'selling_price' => $this->input('selling_price') === '' ? null : $this->inputFloat('selling_price'),
+            'quantity'      => max(0, $this->inputInt('quantity')),
+            'min_stock'     => max(0, $this->inputInt('min_stock', (int) setting('default_min_stock', '3'))),
+            'warranty_days' => $warrantyDays,
         ];
     }
 }

@@ -1,13 +1,15 @@
 <?php
 /**
  * Reports — type picker, filters, optional chart, result table, exports.
- * Expects: $type, $params, $report, $types, $categories, $customers
+ * Expects: $type, $params, $report, $types, $categories, $customers, $products
  */
 
 $showCategory = in_array($type, ['inventory', 'low-stock'], true);
-$showCustomer = $type === 'sales-list';
+$showCustomer = in_array($type, ['sales-list', 'credit-out', 'credit-payments', 'returns', 'refunds', 'warranty'], true);
 $showMethod   = $type === 'sales-list';
-$showDates    = !in_array($type, ['inventory', 'low-stock'], true);
+$showProduct  = in_array($type, ['returns', 'warranty'], true);
+$showInvoice  = in_array($type, ['sales-list', 'credit-out', 'credit-payments', 'returns', 'refunds', 'warranty'], true);
+$showDates    = !in_array($type, ['inventory', 'low-stock', 'credit-out'], true);
 
 $exportParams = array_merge(['type' => $type], $params);
 ?>
@@ -111,6 +113,28 @@ $exportParams = array_merge(['type' => $type], $params);
           <option value="bank_transfer" <?= $params['method'] === 'bank_transfer' ? 'selected' : '' ?>>Bank transfer</option>
           <option value="other" <?= $params['method'] === 'other' ? 'selected' : '' ?>>Other</option>
         </select>
+      </div>
+      <?php endif; ?>
+
+      <?php if ($showProduct): ?>
+      <div>
+        <label class="form-label mb-1 small">Product</label>
+        <select class="form-select form-select-sm" name="product_id" style="max-width:220px">
+          <option value="">All products</option>
+          <?php foreach ($products as $p): ?>
+          <option value="<?= (int) $p['id'] ?>" <?= $params['product_id'] === (int) $p['id'] ? 'selected' : '' ?>>
+            <?= e($p['name']) ?>
+          </option>
+          <?php endforeach; ?>
+        </select>
+      </div>
+      <?php endif; ?>
+
+      <?php if ($showInvoice): ?>
+      <div>
+        <label class="form-label mb-1 small">Invoice #</label>
+        <input class="form-control form-control-sm data" name="invoice_no" style="width:140px"
+               placeholder="INV-000123" value="<?= e($params['invoice_no']) ?>">
       </div>
       <?php endif; ?>
 

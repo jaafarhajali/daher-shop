@@ -170,6 +170,56 @@
         }));
       }
     }
+
+    // --- cash vs card vs credit (3 series → legend, fixed colors) -----------
+    var elPayMix = document.getElementById('chartPayMix');
+    if (elPayMix && DASH.payMix) {
+      var optsMix = baseOptions(ink);
+      optsMix.plugins.legend = {
+        display: true,
+        position: 'bottom',
+        labels: { color: ink.muted, boxWidth: 10, boxHeight: 10, usePointStyle: true, pointStyle: 'rectRounded' }
+      };
+      charts.push(new Chart(elPayMix, {
+        type: 'bar',
+        data: {
+          labels: DASH.payMix.labels,
+          datasets: [
+            { label: 'Cash',          data: DASH.payMix.cash,   backgroundColor: ink.cat3[0], borderRadius: { topLeft: 4, topRight: 4 }, maxBarThickness: 18 },
+            { label: 'Card',          data: DASH.payMix.card,   backgroundColor: ink.cat3[1], borderRadius: { topLeft: 4, topRight: 4 }, maxBarThickness: 18 },
+            { label: 'Credit (دين)',  data: DASH.payMix.credit, backgroundColor: ink.cat3[2], borderRadius: { topLeft: 4, topRight: 4 }, maxBarThickness: 18 }
+          ]
+        },
+        options: optsMix
+      }));
+    }
+
+    // --- monthly returns / refunds (single series each) ----------------------
+    [
+      { el: 'chartReturns', data: DASH.returns, label: 'Returns',  color: ink.series1 },
+      { el: 'chartRefunds', data: DASH.refunds, label: 'Refunds',  color: ink.series2 }
+    ].forEach(function (cfg) {
+      var el = document.getElementById(cfg.el);
+      if (!el || !cfg.data) return;
+      var opts = baseOptions(ink);
+      opts.plugins.tooltip.callbacks.label = function (ctx) {
+        return cfg.label + ': ' + DASH.currency + DS.money(ctx.parsed.y);
+      };
+      charts.push(new Chart(el, {
+        type: 'bar',
+        data: {
+          labels: cfg.data.labels,
+          datasets: [{
+            label: cfg.label,
+            data: cfg.data.values,
+            backgroundColor: cfg.color,
+            borderRadius: { topLeft: 4, topRight: 4 },
+            maxBarThickness: 20
+          }]
+        },
+        options: opts
+      }));
+    });
   }
 
   build();

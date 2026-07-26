@@ -1,10 +1,34 @@
 # Daher Store — Repair Shop Management System
 
 A complete, offline-capable management system for a phone & computer repair shop:
-inventory, POS, repairs, customers, expenses, reports, and backups.
+inventory, POS, repairs, customers, credit (دين), returns, refunds, expenses,
+reports, and backups.
 
 - **Stack:** PHP 8+, MySQL/MariaDB, Apache (XAMPP), Bootstrap 5, Chart.js (all bundled — no internet needed)
 - **Default login:** username `admin` · password `admin123` — **change it after first login** (Settings → My profile)
+
+---
+
+## What's new in v1.1
+
+| Feature | Where |
+|---|---|
+| **Warranty in days** — set days per product; every sold line stores its own expiry date and Active/Expired state (invoice, customer history, Warranty-expiry report, dashboard "expiring soon" card) | Products → Warranty (days) |
+| **Optional selling price** — products can be saved without a price (marked **No price**, filterable); they cannot be sold until a price is set | Products |
+| **Payment methods** are now exactly **Cash / Card / Credit (دين)** (old invoices keep their historic labels) | POS |
+| **Customer credit (دين)** — credit sales save unpaid, show on the customer profile (purchases / paid / outstanding) and the dashboard; the **Credit** page records full or partial payments with history, and invoices auto-close at zero balance | Sidebar → Credit (دين) |
+| **Product returns** — invoice-linked, partial-return support, quantity guards, automatic restock (journaled), and automatic debt reduction when the invoice was unpaid | Sidebar → Returns |
+| **Money refunds** — invoice-linked full/partial refunds capped at the money actually received, with printable receipts; refunds reduce net revenue in reports | Sidebar → Refunds |
+| **5 new reports** (outstanding credit, credit payments, returns, refunds, warranty expiry) + product / invoice-number filters, all exportable to CSV / Excel / PDF-print | Reports |
+| **Dashboard** — outstanding-credit, returns, refunds and unpriced-product cards; cash/card/credit chart; monthly returns & refunds charts | Dashboard |
+
+### Upgrading an existing v1.0 database
+
+Run **once** in phpMyAdmin: select the `daher_store` database → **Import** →
+`database/migrations/001_credit_returns_refunds.sql` → Go.
+Existing data is preserved (warranty months are converted to days at ×30).
+Fresh installs just import `database/schema.sql` as before — it already contains
+the v1.1 structure.
 
 ---
 

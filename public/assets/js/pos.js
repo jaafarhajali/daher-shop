@@ -69,8 +69,9 @@
     }
     $results.innerHTML = '';
     items.forEach(function (p) {
+      var noPrice = p.price === null || p.price === undefined;
       var el = document.createElement('div');
-      el.className = 'pos-product';
+      el.className = 'pos-product' + (noPrice ? ' opacity-75' : '');
       el.innerHTML =
         '<div class="min-w-0">' +
           '<div class="fw-semibold text-truncate"></div>' +
@@ -81,7 +82,13 @@
       el.querySelector('.fw-semibold.text-truncate').textContent = p.name;
       el.querySelector('.small .data').textContent = p.stock;
       if (p.barcode) el.querySelector('.barcode').textContent = p.barcode;
-      el.querySelector('.data.fw-semibold.text-accent').textContent = CUR + DS.money(p.price);
+      var priceEl = el.querySelector('.data.fw-semibold.text-accent');
+      if (noPrice) {
+        priceEl.className = 'badge text-bg-danger';
+        priceEl.textContent = 'No price';
+      } else {
+        priceEl.textContent = CUR + DS.money(p.price);
+      }
       el.addEventListener('click', function () { addToCart(p); });
       $results.appendChild(el);
     });
@@ -89,6 +96,11 @@
 
   // ------------------------------------------------------------- cart ----
   function addToCart(p) {
+    // Products without a selling price cannot be sold (server enforces it too).
+    if (p.price === null || p.price === undefined) {
+      DS.toast('This product does not have a selling price. Please enter a selling price before completing the sale.', 'danger');
+      return;
+    }
     var line = cart.find(function (l) { return l.id === p.id; });
     if (line) {
       if (line.qty + 1 > p.stock) {
@@ -221,6 +233,7 @@
               $custResults.classList.add('d-none');
               $custSearch.value = '';
               paintCustomer();
+              refreshCreditHint();
             });
             $custResults.appendChild(a);
           });
@@ -232,11 +245,29 @@
   document.getElementById('posCustomerClear').addEventListener('click', function () {
     customer = null;
     paintCustomer();
+    refreshCreditHint();
   });
 
   // -------------------------------------------------------- checkout ----
+  var $method = document.getElementById('posMethod');
+  var $creditHint = document.getElementById('posCreditHint');
+
+  function refreshCreditHint() {
+    if ($creditHint) {
+      $creditHint.classList.toggle('d-none', !($method.value === 'credit' && !customer));
+    }
+  }
+  $method.addEventListener('change', refreshCreditHint);
+
   function checkout() {
     if (!cart.length || $checkout.disabled) return;
+
+    // A debt needs a debtor — block credit checkout without a customer.
+    if ($method.value === 'credit' && !customer) {
+      DS.toast('Credit (دين) sales must have a customer — please select the customer first.', 'danger');
+      refreshCreditHint();
+      return;
+    }
 
     $checkout.disabled = true;
     $spinner.classList.remove('d-none');

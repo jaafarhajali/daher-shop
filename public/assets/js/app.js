@@ -158,7 +158,12 @@
         muted: dark ? '#8a94a6' : '#64748b',
         grid: dark ? '#1d2636' : '#eef1f5',
         series1: '#0d9488',
-        series2: '#ea580c'
+        series2: '#ea580c',
+        // 3-series categorical trio (validated for light and dark surfaces;
+        // dark mode uses re-stepped hues of the same colors, not a new palette)
+        cat3: dark
+          ? ['#199e70', '#3987e5', '#d95926']   // aqua, blue, orange (dark steps)
+          : ['#1baf7a', '#2a78d6', '#eb6834']   // aqua, blue, orange (light steps)
       };
     }
   };

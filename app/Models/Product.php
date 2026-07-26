@@ -41,6 +41,9 @@ final class Product extends Model
         } elseif (($f['stock'] ?? '') === 'out') {
             $where[] = 'p.quantity = 0';
         }
+        if (($f['price'] ?? '') === 'missing') {
+            $where[] = 'p.selling_price IS NULL';
+        }
 
         $orderBy = self::SORTABLE[$f['sort'] ?? ''] ?? 'p.name';
         $dir = strtolower($f['dir'] ?? 'asc') === 'desc' ? 'DESC' : 'ASC';
@@ -87,7 +90,7 @@ final class Product extends Model
             $this->execute(
                 'INSERT INTO products
                    (category_id, name, description, barcode, cost_price, selling_price,
-                    quantity, min_stock, warranty_months)
+                    quantity, min_stock, warranty_days)
                  VALUES (:cat, :name, :descr, :barcode, :cost, :price, :qty, :min, :warranty)',
                 [
                     'cat'      => $d['category_id'],
@@ -95,10 +98,10 @@ final class Product extends Model
                     'descr'    => $d['description'] ?: null,
                     'barcode'  => $d['barcode'] ?: null,
                     'cost'     => $d['cost_price'],
-                    'price'    => $d['selling_price'],
+                    'price'    => $d['selling_price'],   // may be NULL: "no price yet"
                     'qty'      => $d['quantity'],
                     'min'      => $d['min_stock'],
-                    'warranty' => $d['warranty_months'],
+                    'warranty' => $d['warranty_days'],
                 ]
             );
             $id = $this->lastId();
@@ -118,7 +121,7 @@ final class Product extends Model
             'UPDATE products SET
                 category_id = :cat, name = :name, description = :descr, barcode = :barcode,
                 cost_price = :cost, selling_price = :price, min_stock = :min,
-                warranty_months = :warranty
+                warranty_days = :warranty
              WHERE id = :id',
             [
                 'cat'      => $d['category_id'],
@@ -126,9 +129,9 @@ final class Product extends Model
                 'descr'    => $d['description'] ?: null,
                 'barcode'  => $d['barcode'] ?: null,
                 'cost'     => $d['cost_price'],
-                'price'    => $d['selling_price'],
+                'price'    => $d['selling_price'],   // may be NULL: "no price yet"
                 'min'      => $d['min_stock'],
-                'warranty' => $d['warranty_months'],
+                'warranty' => $d['warranty_days'],
                 'id'       => $id,
             ]
         );
@@ -231,7 +234,7 @@ final class Product extends Model
     public function posSearch(string $q, int $limit = 12): array
     {
         return $this->fetchAll(
-            'SELECT id, name, barcode, selling_price, quantity
+            'SELECT id, name, barcode, selling_price, quantity, warranty_days
              FROM products
              WHERE is_active = 1
                AND quantity > 0
@@ -246,10 +249,26 @@ final class Product extends Model
     public function findByBarcode(string $barcode): ?array
     {
         return $this->fetch(
-            'SELECT id, name, barcode, selling_price, quantity
+            'SELECT id, name, barcode, selling_price, quantity, warranty_days
              FROM products
              WHERE is_active = 1 AND barcode = :b',
             ['b' => $barcode]
+        );
+    }
+
+    /** Lightweight id/name list for filter dropdowns. */
+    public function allForSelect(): array
+    {
+        return $this->fetchAll(
+            'SELECT id, name FROM products WHERE is_active = 1 ORDER BY name'
+        );
+    }
+
+    /** How many active products still have no selling price. */
+    public function countWithoutPrice(): int
+    {
+        return (int) $this->fetchValue(
+            'SELECT COUNT(*) FROM products WHERE is_active = 1 AND selling_price IS NULL'
         );
     }
 }

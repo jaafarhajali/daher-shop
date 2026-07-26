@@ -30,10 +30,11 @@ final class CustomerController extends Controller
 
         $id = (int) $customer['id'];
         $this->render('customers/show', [
-            'customer'  => $customer,
-            'purchases' => $m->purchaseHistory($id),
-            'repairs'   => $m->repairHistory($id),
-            'lifetime'  => $m->lifetimeValue($id),
+            'customer'     => $customer,
+            'purchases'    => $m->purchaseHistory($id),
+            'repairs'      => $m->repairHistory($id),
+            'lifetime'     => $m->lifetimeValue($id),
+            'creditTotals' => (new \App\Models\CreditPayment())->customerTotals($id),
         ], $customer['name']);
     }
 

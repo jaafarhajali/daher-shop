@@ -61,13 +61,21 @@ final class SaleController extends Controller
         }
 
         $method = $this->input('payment_method', 'cash');
-        if (!in_array($method, ['cash', 'card', 'bank_transfer', 'other'], true)) {
+        if (!in_array($method, ['cash', 'card', 'credit'], true)) {
             $method = 'cash';
         }
 
         $customerId = $this->inputInt('customer_id');
         if ($customerId > 0 && (new Customer())->find($customerId) === null) {
             $customerId = 0;
+        }
+
+        // A debt needs a debtor: credit sales are impossible without a customer.
+        if ($method === 'credit' && $customerId < 1) {
+            $this->json([
+                'ok'    => false,
+                'error' => 'Credit (دين) sales must have a customer — please select the customer first.',
+            ], 422);
         }
 
         try {
@@ -115,9 +123,17 @@ final class SaleController extends Controller
             redirect('sales/index');
         }
 
+        $saleId = (int) $sale['id'];
+        $refunded = $m->refundedTotal($saleId);
+
         $this->render('sales/show', [
-            'sale'  => $sale,
-            'items' => $m->items((int) $sale['id']),
+            'sale'       => $sale,
+            'items'      => $m->items($saleId),
+            'payments'   => (new \App\Models\CreditPayment())->paymentsForSale($saleId),
+            'returns'    => (new \App\Models\ProductReturn())->forSale($saleId),
+            'refunds'    => (new \App\Models\Refund())->forSale($saleId),
+            'refunded'   => $refunded,
+            'refundable' => round((float) $sale['paid_amount'] - $refunded, 2),
         ], $sale['invoice_no']);
     }
 

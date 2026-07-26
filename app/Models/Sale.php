@@ -28,12 +28,20 @@ final class Sale extends Model
 
             foreach ($items as $item) {
                 $product = $this->fetch(
-                    'SELECT id, name, cost_price, selling_price, quantity, is_active
+                    'SELECT id, name, cost_price, selling_price, quantity, is_active, warranty_days
                      FROM products WHERE id = :id FOR UPDATE',
                     ['id' => $item['product_id']]
                 );
                 if ($product === null || (int) $product['is_active'] !== 1) {
                     throw new \RuntimeException('A product in the cart no longer exists.');
+                }
+
+                // Products without a selling price cannot be invoiced.
+                if ($product['selling_price'] === null) {
+                    throw new \RuntimeException(
+                        'This product does not have a selling price. Please enter a selling '
+                        . 'price before completing the sale. (' . $product['name'] . ')'
+                    );
                 }
 
                 $qty = (int) $item['quantity'];
@@ -49,18 +57,32 @@ final class Sale extends Model
                 $subtotal += $lineTotal;
                 $totalCost += $unitCost * $qty;
 
+                // Warranty starts on the sale date and runs for the product's days.
+                $warrantyDays = (int) $product['warranty_days'];
                 $lines[] = [
-                    'product_id' => (int) $product['id'],
-                    'name'       => (string) $product['name'],
-                    'qty'        => $qty,
-                    'price'      => $unitPrice,
-                    'cost'       => $unitCost,
-                    'line_total' => $lineTotal,
+                    'product_id'       => (int) $product['id'],
+                    'name'             => (string) $product['name'],
+                    'qty'              => $qty,
+                    'price'            => $unitPrice,
+                    'cost'             => $unitCost,
+                    'line_total'       => $lineTotal,
+                    'warranty_days'    => $warrantyDays,
+                    'warranty_expires' => $warrantyDays > 0
+                        ? date('Y-m-d', strtotime('+' . $warrantyDays . ' days'))
+                        : null,
                 ];
             }
 
             $discount = round(min(max(0.0, $header['discount']), $subtotal), 2);
             $total = round($subtotal - $discount, 2);
+
+            // Credit (دين) sales: nothing paid yet, and the debt needs a customer.
+            $isCredit = $header['payment_method'] === 'credit';
+            if ($isCredit && empty($header['customer_id'])) {
+                throw new \RuntimeException(
+                    'Credit (دين) sales must have a customer — please select the customer first.'
+                );
+            }
 
             // Header first (placeholder number → real number derived from the id).
             $this->execute(
@@ -76,7 +98,7 @@ final class Sale extends Model
                     'disc'   => $discount,
                     'total'  => $total,
                     'cost'   => round($totalCost, 2),
-                    'paid'   => $total,
+                    'paid'   => $isCredit ? 0.00 : $total,
                     'method' => $header['payment_method'],
                     'notes'  => $header['notes'] !== '' ? $header['notes'] : null,
                 ]
@@ -91,8 +113,9 @@ final class Sale extends Model
             foreach ($lines as $line) {
                 $this->execute(
                     'INSERT INTO sale_items
-                        (sale_id, product_id, product_name, quantity, unit_price, unit_cost, line_total)
-                     VALUES (:sale, :prod, :name, :qty, :price, :cost, :total)',
+                        (sale_id, product_id, product_name, quantity, unit_price, unit_cost,
+                         line_total, warranty_days, warranty_expires)
+                     VALUES (:sale, :prod, :name, :qty, :price, :cost, :total, :wdays, :wexp)',
                     [
                         'sale'  => $saleId,
                         'prod'  => $line['product_id'],
@@ -101,6 +124,8 @@ final class Sale extends Model
                         'price' => $line['price'],
                         'cost'  => $line['cost'],
                         'total' => $line['line_total'],
+                        'wdays' => $line['warranty_days'],
+                        'wexp'  => $line['warranty_expires'],
                     ]
                 );
 
@@ -130,6 +155,21 @@ final class Sale extends Model
             );
             if ($sale === null || $sale['status'] !== 'completed') {
                 throw new \RuntimeException('Only completed sales can be cancelled.');
+            }
+
+            // An invoice with money or goods movements must stay on the books —
+            // use returns / refunds instead of cancelling it outright.
+            $hasActivity = (bool) $this->fetchValue(
+                'SELECT EXISTS(SELECT 1 FROM customer_payments WHERE sale_id = :a)
+                     OR EXISTS(SELECT 1 FROM product_returns  WHERE sale_id = :b)
+                     OR EXISTS(SELECT 1 FROM refunds          WHERE sale_id = :c)',
+                ['a' => $saleId, 'b' => $saleId, 'c' => $saleId]
+            );
+            if ($hasActivity) {
+                throw new \RuntimeException(
+                    'This invoice already has payments, returns or refunds recorded. '
+                    . 'Use a return or refund instead of cancelling it.'
+                );
             }
 
             $this->execute(
@@ -183,9 +223,13 @@ final class Sale extends Model
             $where[] = 's.status = :status';
             $params['status'] = $f['status'];
         }
-        if (!empty($f['method']) && in_array($f['method'], ['cash', 'card', 'bank_transfer', 'other'], true)) {
+        if (!empty($f['method'])
+            && in_array($f['method'], ['cash', 'card', 'credit', 'bank_transfer', 'other'], true)) {
             $where[] = 's.payment_method = :method';
             $params['method'] = $f['method'];
+        }
+        if (($f['pay'] ?? '') === 'outstanding') {
+            $where[] = "s.status = 'completed' AND s.paid_amount < s.total";
         }
 
         $whereSql = implode(' AND ', $where);
@@ -218,10 +262,48 @@ final class Sale extends Model
         );
     }
 
+    /** Look an invoice up by its human number (INV-000123), case-insensitive. */
+    public function findByInvoiceNo(string $invoiceNo): ?array
+    {
+        $row = $this->fetch(
+            'SELECT id FROM sales WHERE invoice_no = :no',
+            ['no' => strtoupper(trim($invoiceNo))]
+        );
+
+        return $row === null ? null : $this->find((int) $row['id']);
+    }
+
     public function items(int $saleId): array
     {
         return $this->fetchAll(
             'SELECT * FROM sale_items WHERE sale_id = :id ORDER BY id',
+            ['id' => $saleId]
+        );
+    }
+
+    /**
+     * Items with how many units are still returnable (sold − already returned).
+     */
+    public function itemsWithReturnable(int $saleId): array
+    {
+        return $this->fetchAll(
+            'SELECT si.*,
+                    si.quantity - COALESCE((
+                        SELECT SUM(ri.quantity) FROM return_items ri
+                        WHERE ri.sale_item_id = si.id
+                    ), 0) AS returnable
+             FROM sale_items si
+             WHERE si.sale_id = :id
+             ORDER BY si.id',
+            ['id' => $saleId]
+        );
+    }
+
+    /** Money already refunded against this invoice. */
+    public function refundedTotal(int $saleId): float
+    {
+        return (float) $this->fetchValue(
+            'SELECT COALESCE(SUM(amount),0) FROM refunds WHERE sale_id = :id',
             ['id' => $saleId]
         );
     }

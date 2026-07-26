@@ -105,15 +105,50 @@ function repair_status_meta(string $status): array
     };
 }
 
-/** Human label for a payment method. */
+/** Human label for a payment method (legacy values keep their labels). */
 function payment_label(string $method): string
 {
     return match ($method) {
         'cash'          => 'Cash',
         'card'          => 'Card',
+        'credit'        => 'Credit (دين)',
+        'return_credit' => 'Return credit',
         'bank_transfer' => 'Bank transfer',
         default         => 'Other',
     };
+}
+
+/**
+ * Warranty state for a snapshotted expiry date.
+ * @return array{label:string, color:string, active:bool}
+ */
+function warranty_status(?string $expires): array
+{
+    if ($expires === null || $expires === '' || str_starts_with($expires, '0000')) {
+        return ['label' => 'No warranty', 'color' => 'secondary', 'active' => false];
+    }
+    $active = $expires >= date('Y-m-d');
+
+    return $active
+        ? ['label' => 'Active',  'color' => 'success', 'active' => true]
+        : ['label' => 'Expired', 'color' => 'danger',  'active' => false];
+}
+
+/**
+ * Payment state of an invoice (total vs paid so far).
+ * @return array{label:string, color:string, outstanding:float}
+ */
+function paid_status_meta(float $total, float $paid): array
+{
+    $outstanding = round($total - $paid, 2);
+    if ($outstanding <= 0.004) {
+        return ['label' => 'Paid', 'color' => 'success', 'outstanding' => 0.0];
+    }
+    if ($paid > 0.004) {
+        return ['label' => 'Partially paid', 'color' => 'warning', 'outstanding' => $outstanding];
+    }
+
+    return ['label' => 'Unpaid (دين)', 'color' => 'danger', 'outstanding' => $outstanding];
 }
 
 /**

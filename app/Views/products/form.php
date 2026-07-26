@@ -65,9 +65,12 @@ $val = static fn (string $key, $fallback = '') => old($key, $isEdit ? ($product[
               <?php if (form_error('barcode')): ?><div class="text-danger small mt-1"><?= form_error('barcode') ?></div><?php endif; ?>
             </div>
             <div class="col-md-6">
-              <label class="form-label" for="pWarranty">Warranty (months)</label>
-              <input class="form-control" id="pWarranty" name="warranty_months" type="number"
-                     min="0" max="120" value="<?= $val('warranty_months', '0') ?>">
+              <label class="form-label" for="pWarranty">Warranty (days)</label>
+              <input class="form-control data" id="pWarranty" name="warranty_days" type="number"
+                     min="0" max="3650" step="1" placeholder="e.g. 30, 90, 180, 365"
+                     value="<?= $val('warranty_days', '0') ?>">
+              <div class="form-text">Days of warranty from the sale date. 0 or empty = no warranty.</div>
+              <?php if (form_error('warranty_days')): ?><div class="text-danger small mt-1"><?= form_error('warranty_days') ?></div><?php endif; ?>
             </div>
           </div>
         </div>
@@ -86,12 +89,13 @@ $val = static fn (string $key, $fallback = '') => old($key, $isEdit ? ($product[
               </div>
             </div>
             <div class="col-md-4">
-              <label class="form-label" for="pPrice">Selling price <span class="text-danger">*</span></label>
+              <label class="form-label" for="pPrice">Selling price <span class="text-secondary">(optional)</span></label>
               <div class="input-group">
                 <span class="input-group-text"><?= e(setting('currency_symbol', '$')) ?></span>
                 <input class="form-control data" id="pPrice" name="selling_price" type="number"
-                       step="0.01" min="0" required value="<?= $val('selling_price') ?>">
+                       step="0.01" min="0" placeholder="Not set yet" value="<?= $val('selling_price') ?>">
               </div>
+              <div class="form-text">Leave empty if unknown — the product cannot be sold until a price is set.</div>
             </div>
             <div class="col-md-4">
               <label class="form-label">Profit per item</label>
@@ -203,6 +207,11 @@ $val = static fn (string $key, $fallback = '') => old($key, $isEdit ? ($product[
   var out = document.getElementById('pProfit');
 
   function refresh() {
+    if (price.value === '') {
+      out.textContent = '— no selling price yet';
+      out.classList.remove('text-success', 'text-danger');
+      return;
+    }
     var p = (parseFloat(price.value) || 0) - (parseFloat(cost.value) || 0);
     out.textContent = '<?= e(setting('currency_symbol', '$')) ?>' + DS.money(p);
     out.classList.toggle('text-success', p > 0);

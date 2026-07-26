@@ -118,9 +118,11 @@
             <select class="form-select form-select-sm" id="posMethod">
               <option value="cash">Cash</option>
               <option value="card">Card</option>
-              <option value="bank_transfer">Bank transfer</option>
-              <option value="other">Other</option>
+              <option value="credit">Credit (دين)</option>
             </select>
+            <div class="form-text text-danger d-none" id="posCreditHint">
+              <i class="bi bi-exclamation-circle me-1"></i>Credit sales need a customer.
+            </div>
           </div>
           <div class="col-6">
             <label class="form-label small" for="posNotes">Note</label>

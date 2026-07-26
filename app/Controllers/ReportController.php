@@ -38,6 +38,7 @@ final class ReportController extends Controller
             'types'      => Report::TYPES,
             'categories' => (new Category())->all(),
             'customers'  => (new Customer())->all(),
+            'products'   => (new \App\Models\Product())->allForSelect(),
             'pageScript' => 'reports',
             'inlineScript' => $inline,
         ], 'Reports');
@@ -71,7 +72,10 @@ final class ReportController extends Controller
 
     // ------------------------------------------------------------- private --
 
-    /** @return array{from:string, to:string, category_id:int, customer_id:int, method:string} */
+    /**
+     * @return array{from:string, to:string, category_id:int, customer_id:int,
+     *               method:string, product_id:int, invoice_no:string}
+     */
     private function params(): array
     {
         $from = $this->queryString('from', date('Y-m-01'));
@@ -96,6 +100,8 @@ final class ReportController extends Controller
             'category_id' => $this->queryInt('category_id'),
             'customer_id' => $this->queryInt('customer_id'),
             'method'      => $this->queryString('method'),
+            'product_id'  => $this->queryInt('product_id'),
+            'invoice_no'  => mb_substr($this->queryString('invoice_no'), 0, 20),
         ];
     }
 

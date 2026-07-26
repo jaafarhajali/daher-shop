@@ -106,7 +106,7 @@ final class Customer extends Model
     public function purchaseHistory(int $id, int $limit = 25): array
     {
         return $this->fetchAll(
-            'SELECT id, invoice_no, total, status, payment_method, created_at
+            'SELECT id, invoice_no, total, paid_amount, status, payment_method, created_at
              FROM sales WHERE customer_id = :id
              ORDER BY id DESC LIMIT ' . max(1, $limit),
             ['id' => $id]

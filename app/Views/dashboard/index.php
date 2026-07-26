@@ -76,6 +76,35 @@
   <?php endforeach; ?>
 </div>
 
+<!-- KPI row 3: credit & after-sales -->
+<div class="row g-3 mb-4">
+  <?php
+  $afterSales = [
+      ['label' => 'Outstanding credit (دين)', 'value' => money($creditTotal), 'icon' => 'wallet2', 'href' => url('credit/index'), 'fg' => '#dc2626', 'bg' => 'rgba(220,38,38,.12)', 'sub' => 'owed by customers'],
+      ['label' => 'Returns (30 days)', 'value' => money($returns30d), 'icon' => 'arrow-counterclockwise', 'href' => url('returns/index'), 'fg' => '#d97706', 'bg' => 'rgba(217,119,6,.12)', 'sub' => 'goods returned'],
+      ['label' => 'Refunds (30 days)', 'value' => money($refunds30d), 'icon' => 'cash-coin', 'href' => url('refunds/index'), 'fg' => '#ea580c', 'bg' => 'rgba(234,88,12,.12)', 'sub' => 'money given back'],
+      ['label' => 'No selling price', 'value' => (string) $noPriceCount, 'icon' => 'tag', 'href' => url('products/index', ['price' => 'missing']), 'fg' => '#0284c7', 'bg' => 'rgba(2,132,199,.12)', 'sub' => 'products to price'],
+  ];
+  foreach ($afterSales as $k): ?>
+  <div class="col-sm-6 col-xl-3">
+    <a href="<?= $k['href'] ?>" class="text-decoration-none text-reset">
+      <div class="card kpi-card h-100">
+        <div class="d-flex align-items-center gap-3">
+          <div class="kpi-icon" style="background:<?= $k['bg'] ?>;color:<?= $k['fg'] ?>">
+            <i class="bi bi-<?= $k['icon'] ?>"></i>
+          </div>
+          <div class="min-w-0">
+            <div class="kpi-label"><?= e($k['label']) ?></div>
+            <div class="kpi-value"><?= e($k['value']) ?></div>
+            <div class="kpi-sub"><?= e($k['sub']) ?></div>
+          </div>
+        </div>
+      </div>
+    </a>
+  </div>
+  <?php endforeach; ?>
+</div>
+
 <!-- Charts -->
 <div class="row g-3 mb-4">
   <div class="col-xl-7">
@@ -91,6 +120,28 @@
     <div class="card h-100">
       <div class="card-header">Revenue vs expenses — last 6 months</div>
       <div class="card-body"><div class="chart-box"><canvas id="chartRevExp"></canvas></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- Credit vs cash + returns/refunds trends -->
+<div class="row g-3 mb-4">
+  <div class="col-xl-6">
+    <div class="card h-100">
+      <div class="card-header">Sales by payment — cash / card / credit (6 months)</div>
+      <div class="card-body"><div class="chart-box" style="height:250px"><canvas id="chartPayMix"></canvas></div></div>
+    </div>
+  </div>
+  <div class="col-xl-3 col-md-6">
+    <div class="card h-100">
+      <div class="card-header">Returns — monthly</div>
+      <div class="card-body"><div class="chart-box" style="height:250px"><canvas id="chartReturns"></canvas></div></div>
+    </div>
+  </div>
+  <div class="col-xl-3 col-md-6">
+    <div class="card h-100">
+      <div class="card-header">Refunds — monthly</div>
+      <div class="card-body"><div class="chart-box" style="height:250px"><canvas id="chartRefunds"></canvas></div></div>
     </div>
   </div>
 </div>
@@ -178,6 +229,27 @@
           <span class="data small text-<?= (int) $p['quantity'] === 0 ? 'danger' : 'warning-emphasis' ?>">
             <?= (int) $p['quantity'] ?> / min <?= (int) $p['min_stock'] ?>
           </span>
+        </a>
+        <?php endforeach; ?>
+      </div>
+    </div>
+    <?php endif; ?>
+
+    <?php if ($warrantySoon !== []): ?>
+    <div class="card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-shield-check me-1"></i>Warranties expiring soon</span>
+        <span class="badge badge-soft"><?= (int) $warrantySoonCnt ?> in 30 days</span>
+      </div>
+      <div class="list-group list-group-flush">
+        <?php foreach ($warrantySoon as $w): ?>
+        <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+           href="<?= url('sales/show', ['id' => $w['sale_id']]) ?>">
+          <div class="min-w-0">
+            <span class="text-truncate d-block"><?= e($w['product_name']) ?></span>
+            <span class="small text-secondary"><?= e($w['customer_name']) ?> · <?= e($w['invoice_no']) ?></span>
+          </div>
+          <span class="data small text-warning-emphasis"><?= e(fmt_date($w['warranty_expires'])) ?></span>
         </a>
         <?php endforeach; ?>
       </div>

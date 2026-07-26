@@ -58,6 +58,13 @@ $sortLink = static function (string $key, string $label) use ($filters): string 
           <option value="out" <?= $filters['stock'] === 'out' ? 'selected' : '' ?>>Out of stock</option>
         </select>
       </div>
+      <div>
+        <label class="form-label mb-1 small">Price</label>
+        <select class="form-select form-select-sm" name="price">
+          <option value="">All</option>
+          <option value="missing" <?= ($filters['price'] ?? '') === 'missing' ? 'selected' : '' ?>>No selling price</option>
+        </select>
+      </div>
       <div class="d-flex gap-2">
         <button class="btn btn-outline-primary btn-sm" type="submit"><i class="bi bi-funnel me-1"></i>Filter</button>
         <a class="btn btn-outline-secondary btn-sm" href="<?= url('products/index') ?>">Reset</a>
@@ -104,10 +111,19 @@ $sortLink = static function (string $key, string $label) use ($filters): string 
           </td>
           <td><span class="badge badge-soft"><?= e($p['category_name']) ?></span></td>
           <td class="num"><?= e(money($p['cost_price'])) ?></td>
+          <?php if ($p['selling_price'] === null): ?>
+          <td class="num">
+            <span class="badge text-bg-danger" title="This product cannot be sold until a price is set">
+              <i class="bi bi-exclamation-triangle me-1"></i>No price
+            </span>
+          </td>
+          <td class="num text-secondary">—</td>
+          <?php else: ?>
           <td class="num"><?= e(money($p['selling_price'])) ?></td>
           <td class="num text-<?= (float) $p['profit'] >= 0 ? 'success' : 'danger' ?>">
             <?= e(money($p['profit'])) ?>
           </td>
+          <?php endif; ?>
           <td>
             <div class="d-flex align-items-center gap-2">
               <span class="data small" style="min-width:2.5ch"><?= $qty ?></span>

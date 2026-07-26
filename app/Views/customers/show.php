@@ -25,6 +25,43 @@
   </div>
 </div>
 
+<!-- Purchases / paid / outstanding -->
+<div class="row g-3 mb-3">
+  <?php
+  $creditTiles = [
+      ['label' => 'Total purchases', 'value' => money($creditTotals['purchases']), 'icon' => 'bag', 'fg' => '#0d9488', 'bg' => 'rgba(13,148,136,.12)'],
+      ['label' => 'Total paid', 'value' => money($creditTotals['paid']), 'icon' => 'check2-circle', 'fg' => '#16a34a', 'bg' => 'rgba(22,163,74,.12)'],
+      ['label' => 'Outstanding (دين)', 'value' => money($creditTotals['outstanding']), 'icon' => 'exclamation-circle', 'fg' => '#dc2626', 'bg' => 'rgba(220,38,38,.12)'],
+  ];
+  foreach ($creditTiles as $t): ?>
+  <div class="col-md-4">
+    <div class="card kpi-card h-100">
+      <div class="d-flex align-items-center gap-3">
+        <div class="kpi-icon" style="background:<?= $t['bg'] ?>;color:<?= $t['fg'] ?>">
+          <i class="bi bi-<?= $t['icon'] ?>"></i>
+        </div>
+        <div class="min-w-0">
+          <div class="kpi-label"><?= e($t['label']) ?></div>
+          <div class="kpi-value"><?= e($t['value']) ?></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <?php endforeach; ?>
+</div>
+
+<?php if ($creditTotals['outstanding'] > 0.004): ?>
+<div class="alert alert-warning d-flex justify-content-between align-items-center flex-wrap gap-2">
+  <span>
+    <i class="bi bi-exclamation-circle me-2"></i>
+    This customer owes <strong class="data"><?= e(money($creditTotals['outstanding'])) ?></strong>.
+  </span>
+  <a class="btn btn-warning btn-sm" href="<?= url('credit/customer', ['id' => $customer['id']]) ?>">
+    <i class="bi bi-cash me-1"></i>Record a payment
+  </a>
+</div>
+<?php endif; ?>
+
 <div class="row g-3">
   <div class="col-xl-4">
     <div class="card mb-3">
@@ -65,23 +102,31 @@
       <div class="table-responsive">
         <table class="table table-hover align-middle mb-0">
           <thead>
-            <tr><th>Invoice</th><th>Date</th><th>Payment</th><th>Status</th><th class="num">Total</th></tr>
+            <tr><th>Invoice</th><th>Date</th><th>Payment</th><th>Status</th><th class="num">Total</th><th class="num">Balance</th></tr>
           </thead>
           <tbody>
             <?php if ($purchases === []): ?>
-              <tr><td colspan="5"><div class="empty-state py-4"><i class="bi bi-receipt"></i>No purchases yet.</div></td></tr>
+              <tr><td colspan="6"><div class="empty-state py-4"><i class="bi bi-receipt"></i>No purchases yet.</div></td></tr>
             <?php endif; ?>
-            <?php foreach ($purchases as $s): ?>
+            <?php foreach ($purchases as $s):
+                $rowBalance = $s['status'] === 'completed'
+                    ? round((float) $s['total'] - (float) $s['paid_amount'], 2) : 0.0;
+            ?>
             <tr>
               <td><a class="data" href="<?= url('sales/show', ['id' => $s['id']]) ?>"><?= e($s['invoice_no']) ?></a></td>
               <td class="small"><?= e(fmt_date($s['created_at'], true)) ?></td>
               <td class="small"><?= e(payment_label($s['payment_method'])) ?></td>
               <td>
-                <span class="badge text-bg-<?= $s['status'] === 'completed' ? 'success' : 'danger' ?>">
-                  <?= e($s['status']) ?>
-                </span>
+                <?php if ($s['status'] === 'cancelled'): ?>
+                  <span class="badge text-bg-danger">cancelled</span>
+                <?php else: $pm = paid_status_meta((float) $s['total'], (float) $s['paid_amount']); ?>
+                  <span class="badge text-bg-<?= $pm['color'] ?>"><?= e($pm['label']) ?></span>
+                <?php endif; ?>
               </td>
               <td class="num"><?= e(money($s['total'])) ?></td>
+              <td class="num <?= $rowBalance > 0.004 ? 'text-danger fw-semibold' : 'text-success' ?>">
+                <?= e(money($rowBalance)) ?>
+              </td>
             </tr>
             <?php endforeach; ?>
           </tbody>

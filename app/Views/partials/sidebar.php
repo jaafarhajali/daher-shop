@@ -6,9 +6,10 @@
 use App\Core\Auth;
 use App\Core\Database;
 
-// Live badges: pending repairs + low-stock count (cheap indexed COUNTs).
+// Live badges: pending repairs, low stock, debtor count (cheap indexed COUNTs).
 $navPendingRepairs = 0;
 $navLowStock = 0;
+$navDebtors = 0;
 try {
     $pdo = Database::pdo();
     $navPendingRepairs = (int) $pdo->query(
@@ -16,6 +17,10 @@ try {
     )->fetchColumn();
     $navLowStock = (int) $pdo->query(
         'SELECT COUNT(*) FROM products WHERE is_active = 1 AND quantity <= min_stock'
+    )->fetchColumn();
+    $navDebtors = (int) $pdo->query(
+        "SELECT COUNT(DISTINCT customer_id) FROM sales
+         WHERE status = 'completed' AND paid_amount < total AND customer_id IS NOT NULL"
     )->fetchColumn();
 } catch (Throwable) {
     // navigation must render even if the DB hiccups
@@ -28,6 +33,8 @@ $navSections = [
     'Operations' => [
         ['route' => 'sales/pos',      'icon' => 'basket2',        'label' => 'Point of Sale', 'match' => 'sales/pos'],
         ['route' => 'sales/index',    'icon' => 'receipt',        'label' => 'Sales',         'match' => 'sales/index|sales/show'],
+        ['route' => 'returns/index',  'icon' => 'arrow-counterclockwise', 'label' => 'Returns', 'match' => 'returns/'],
+        ['route' => 'refunds/index',  'icon' => 'cash-coin',      'label' => 'Refunds',       'match' => 'refunds/'],
         ['route' => 'repairs/index',  'icon' => 'tools',          'label' => 'Repairs',       'match' => 'repairs/', 'badge' => $navPendingRepairs],
     ],
     'Catalog' => [
@@ -36,6 +43,7 @@ $navSections = [
     ],
     'People & Money' => [
         ['route' => 'customers/index', 'icon' => 'people',        'label' => 'Customers', 'match' => 'customers/'],
+        ['route' => 'credit/index',    'icon' => 'wallet2',       'label' => 'Credit (دين)', 'match' => 'credit/', 'badge' => $navDebtors, 'badgeColor' => 'danger'],
         ['route' => 'expenses/index',  'icon' => 'cash-stack',    'label' => 'Expenses',  'match' => 'expenses/'],
         ['route' => 'reports/index',   'icon' => 'graph-up',      'label' => 'Reports',   'match' => 'reports/'],
     ],
