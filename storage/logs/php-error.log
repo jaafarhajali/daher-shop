@@ -10,3 +10,6 @@
 [26-Jul-2026 17:24:41 Asia/Beirut] SQLSTATE[HY093]: Invalid parameter number in C:\xampp\htdocs\daher-shop\app\Core\Model.php:45
 [26-Jul-2026 17:24:58 Asia/Beirut] SQLSTATE[HY093]: Invalid parameter number in C:\xampp\htdocs\daher-shop\app\Core\Model.php:45
 [26-Jul-2026 18:01:59 Asia/Beirut] SQLSTATE[HY093]: Invalid parameter number in C:\xampp\htdocs\daher-shop\app\Core\Model.php:45
+[28-Jul-2026 11:39:08 Asia/Beirut] Database connection failed. Check that MySQL is running in the XAMPP Control Panel and that config/config.php credentials are correct. Driver said: SQLSTATE[HY000] [2006] MySQL server has gone away in C:\xampp\htdocs\daher store\app\Core\Database.php:34
+[28-Jul-2026 11:39:10 Asia/Beirut] Database connection failed. Check that MySQL is running in the XAMPP Control Panel and that config/config.php credentials are correct. Driver said: SQLSTATE[HY000] [2002] No connection could be made because the target machine actively refused it in C:\xampp\htdocs\daher store\app\Core\Database.php:34
+[28-Jul-2026 11:39:20 Asia/Beirut] Database connection failed. Check that MySQL is running in the XAMPP Control Panel and that config/config.php credentials are correct. Driver said: SQLSTATE[HY000] [2002] No connection could be made because the target machine actively refused it in C:\xampp\htdocs\daher store\app\Core\Database.php:34

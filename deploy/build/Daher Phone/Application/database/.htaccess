@@ -1,0 +1,2 @@
+# Schema files are never served directly
+Require all denied
