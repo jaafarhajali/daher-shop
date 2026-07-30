@@ -1,0 +1,6 @@
+{
+  "version": "1.3.1",
+  "url": "https://raw.githubusercontent.com/jaafarhajali/daher-shop/main/releases/DaherPhone-update-1.3.1.zip",
+  "sha256": "6193123c2dcab5c685dafc5af702db1369dd8010757444a9b63e20758a393c16",
+  "notes": "v1.3.1 - Fixes search on all pages (products, customers, sales, repairs, expenses, returns, refunds), adds live product search, adds Current Stock Value to the dashboard."
+}

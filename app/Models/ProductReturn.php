@@ -159,8 +159,9 @@ final class ProductReturn extends Model
         $params = [];
 
         if (!empty($f['q'])) {
-            $where[] = '(pr.return_no LIKE :q OR s.invoice_no LIKE :q OR c.name LIKE :q)';
-            $params['q'] = '%' . $f['q'] . '%';
+            $where[] = '(pr.return_no LIKE :q1 OR s.invoice_no LIKE :q2 OR c.name LIKE :q3)';
+            $like = '%' . $f['q'] . '%';
+            $params += ['q1' => $like, 'q2' => $like, 'q3' => $like];
         }
         if (!empty($f['from'])) {
             $where[] = 'DATE(pr.created_at) >= :dfrom';

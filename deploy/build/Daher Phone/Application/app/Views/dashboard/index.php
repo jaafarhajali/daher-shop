@@ -52,12 +52,13 @@
   <?php
   $ops = [
       ['label' => 'Products',        'value' => (string) $productCount,  'icon' => 'box-seam',        'href' => url('products/index'),   'fg' => '#0d9488', 'bg' => 'rgba(13,148,136,.12)', 'sub' => 'active products'],
+      ['label' => 'Current stock value', 'value' => money($stockValue),  'icon' => 'boxes',           'href' => url('reports/index', ['type' => 'inventory']), 'fg' => '#16a34a', 'bg' => 'rgba(22,163,74,.12)', 'sub' => 'inventory at purchase cost'],
       ['label' => 'Low stock',       'value' => (string) $lowStockCount, 'icon' => 'exclamation-triangle', 'href' => url('products/low-stock'), 'fg' => '#d97706', 'bg' => 'rgba(217,119,6,.12)', 'sub' => 'need restocking'],
       ['label' => 'Pending repairs', 'value' => (string) $pendingRepairs,'icon' => 'tools',           'href' => url('repairs/index'),    'fg' => '#0284c7', 'bg' => 'rgba(2,132,199,.12)', 'sub' => 'in the workshop'],
       ['label' => 'Expenses (month)','value' => money($monthExpenses),   'icon' => 'wallet2',         'href' => url('expenses/index'),   'fg' => '#dc2626', 'bg' => 'rgba(220,38,38,.12)', 'sub' => date('F Y')],
   ];
   foreach ($ops as $k): ?>
-  <div class="col-sm-6 col-xl-3">
+  <div class="col-sm-6 col-xl">
     <a href="<?= $k['href'] ?>" class="text-decoration-none text-reset">
       <div class="card kpi-card h-100">
         <div class="d-flex align-items-center gap-3">

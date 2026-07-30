@@ -212,8 +212,9 @@ final class Sale extends Model
         $params = [];
 
         if (!empty($f['q'])) {
-            $where[] = '(s.invoice_no LIKE :q OR c.name LIKE :q)';
-            $params['q'] = '%' . $f['q'] . '%';
+            $where[] = '(s.invoice_no LIKE :q1 OR c.name LIKE :q2)';
+            $like = '%' . $f['q'] . '%';
+            $params += ['q1' => $like, 'q2' => $like];
         }
         if (!empty($f['from'])) {
             $where[] = 'DATE(s.created_at) >= :dfrom';

@@ -67,6 +67,20 @@ final class Dashboard extends Model
         return (int) $this->fetchValue('SELECT COUNT(*) FROM products WHERE is_active = 1');
     }
 
+    /**
+     * Current stock value = Σ (purchase cost × units on the shelf), computed
+     * by the database. Sales/repair parts reduce it, returns and restocks
+     * raise it automatically, because `quantity` is the live stock level.
+     * Archived products are included while they still hold physical stock.
+     */
+    public function currentStockValue(): float
+    {
+        return (float) $this->fetchValue(
+            'SELECT COALESCE(SUM(cost_price * quantity), 0)
+             FROM products WHERE quantity > 0'
+        );
+    }
+
     public function lowStockCount(): int
     {
         return (int) $this->fetchValue(

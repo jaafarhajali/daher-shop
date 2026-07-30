@@ -39,6 +39,7 @@ final class DashboardController extends Controller
             'grossProfit'     => $allTime['gross_profit'],
             'netProfit'       => $allTime['net_profit'],
             'productCount'    => $m->productCount(),
+            'stockValue'      => $m->currentStockValue(),
             'lowStockCount'   => $m->lowStockCount(),
             'pendingRepairs'  => $m->pendingRepairCount(),
             'monthExpenses'   => $m->monthExpensesTotal(),

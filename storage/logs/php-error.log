@@ -13,3 +13,12 @@
 [28-Jul-2026 11:39:08 Asia/Beirut] Database connection failed. Check that MySQL is running in the XAMPP Control Panel and that config/config.php credentials are correct. Driver said: SQLSTATE[HY000] [2006] MySQL server has gone away in C:\xampp\htdocs\daher store\app\Core\Database.php:34
 [28-Jul-2026 11:39:10 Asia/Beirut] Database connection failed. Check that MySQL is running in the XAMPP Control Panel and that config/config.php credentials are correct. Driver said: SQLSTATE[HY000] [2002] No connection could be made because the target machine actively refused it in C:\xampp\htdocs\daher store\app\Core\Database.php:34
 [28-Jul-2026 11:39:20 Asia/Beirut] Database connection failed. Check that MySQL is running in the XAMPP Control Panel and that config/config.php credentials are correct. Driver said: SQLSTATE[HY000] [2002] No connection could be made because the target machine actively refused it in C:\xampp\htdocs\daher store\app\Core\Database.php:34
+[30-Jul-2026 12:25:34 Asia/Beirut] SQLSTATE[HY000]: General error: 2006 MySQL server has gone away in C:\xampp\htdocs\daher store\app\Core\Model.php:45
+[30-Jul-2026 12:25:36 Asia/Beirut] Database connection failed. Check that MySQL is running in the XAMPP Control Panel and that config/config.php credentials are correct. Driver said: SQLSTATE[HY000] [2002] No connection could be made because the target machine actively refused it in C:\xampp\htdocs\daher store\app\Core\Database.php:34
+[30-Jul-2026 12:25:38 Asia/Beirut] Database connection failed. Check that MySQL is running in the XAMPP Control Panel and that config/config.php credentials are correct. Driver said: SQLSTATE[HY000] [2002] No connection could be made because the target machine actively refused it in C:\xampp\htdocs\daher store\app\Core\Database.php:34
+[30-Jul-2026 12:27:17 Asia/Beirut] SQLSTATE[HY093]: Invalid parameter number in C:\xampp\htdocs\daher store\app\Core\Model.php:26
+[30-Jul-2026 12:27:17 Asia/Beirut] SQLSTATE[HY093]: Invalid parameter number in C:\xampp\htdocs\daher store\app\Core\Model.php:26
+[30-Jul-2026 12:27:18 Asia/Beirut] SQLSTATE[HY093]: Invalid parameter number in C:\xampp\htdocs\daher store\app\Core\Model.php:26
+[30-Jul-2026 12:27:19 Asia/Beirut] SQLSTATE[HY093]: Invalid parameter number in C:\xampp\htdocs\daher store\app\Core\Model.php:26
+[30-Jul-2026 12:31:52 Asia/Beirut] SQLSTATE[HY093]: Invalid parameter number in C:\xampp\htdocs\daher store\app\Core\Model.php:45
+[30-Jul-2026 12:31:52 Asia/Beirut] SQLSTATE[HY093]: Invalid parameter number in C:\xampp\htdocs\daher store\app\Core\Model.php:26

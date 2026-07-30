@@ -29,8 +29,12 @@ final class Product extends Model
         $params = [];
 
         if (!empty($f['q'])) {
-            $where[] = '(p.name LIKE :q OR p.barcode LIKE :q OR p.description LIKE :q)';
-            $params['q'] = '%' . $f['q'] . '%';
+            // Distinct placeholder names: with native prepares (emulation off),
+            // PDO rejects the same named marker used twice in one statement.
+            $where[] = '(p.name LIKE :q1 OR p.barcode LIKE :q2
+                         OR p.description LIKE :q3 OR c.name LIKE :q4)';
+            $like = '%' . $f['q'] . '%';
+            $params += ['q1' => $like, 'q2' => $like, 'q3' => $like, 'q4' => $like];
         }
         if (!empty($f['category_id'])) {
             $where[] = 'p.category_id = :cat';

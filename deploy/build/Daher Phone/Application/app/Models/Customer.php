@@ -13,8 +13,9 @@ final class Customer extends Model
         $where = '1=1';
         $params = [];
         if ($q !== '') {
-            $where = '(name LIKE :q OR phone LIKE :q OR email LIKE :q)';
-            $params['q'] = '%' . $q . '%';
+            $where = '(name LIKE :q1 OR phone LIKE :q2 OR email LIKE :q3)';
+            $like = '%' . $q . '%';
+            $params = ['q1' => $like, 'q2' => $like, 'q3' => $like];
         }
 
         return $this->paginate(
@@ -34,11 +35,13 @@ final class Customer extends Model
     /** For dropdowns / POS quick pick. */
     public function quickSearch(string $q, int $limit = 10): array
     {
+        $like = '%' . $q . '%';
+
         return $this->fetchAll(
             'SELECT id, name, phone FROM customers
-             WHERE name LIKE :q OR phone LIKE :q
+             WHERE name LIKE :q1 OR phone LIKE :q2
              ORDER BY name LIMIT ' . max(1, $limit),
-            ['q' => '%' . $q . '%']
+            ['q1' => $like, 'q2' => $like]
         );
     }
 

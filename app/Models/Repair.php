@@ -230,9 +230,10 @@ final class Repair extends Model
         $params = [];
 
         if (!empty($f['q'])) {
-            $where[] = '(r.ticket_no LIKE :q OR c.name LIKE :q OR r.serial_no LIKE :q
-                         OR r.brand LIKE :q OR r.model LIKE :q)';
-            $params['q'] = '%' . $f['q'] . '%';
+            $where[] = '(r.ticket_no LIKE :q1 OR c.name LIKE :q2 OR r.serial_no LIKE :q3
+                         OR r.brand LIKE :q4 OR r.model LIKE :q5)';
+            $like = '%' . $f['q'] . '%';
+            $params += ['q1' => $like, 'q2' => $like, 'q3' => $like, 'q4' => $like, 'q5' => $like];
         }
         if (!empty($f['status']) && in_array($f['status'], self::STATUSES, true)) {
             $where[] = 'r.status = :status';

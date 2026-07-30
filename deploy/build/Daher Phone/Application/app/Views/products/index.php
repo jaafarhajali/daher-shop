@@ -30,14 +30,15 @@ $sortLink = static function (string $key, string $label) use ($filters): string 
   </a>
 </div>
 
-<div class="card">
+<div class="card" id="productsCard">
   <div class="card-header">
-    <form class="filters-bar" method="get" action="index.php">
+    <form class="filters-bar" method="get" action="index.php" id="productFilters">
       <input type="hidden" name="r" value="products/index">
       <div>
         <label class="form-label mb-1 small">Search</label>
-        <input type="search" class="form-control form-control-sm" name="q" style="min-width:220px"
-               placeholder="Name, barcode or description…" value="<?= e($filters['q']) ?>">
+        <input type="search" class="form-control form-control-sm" name="q" id="productSearch"
+               style="min-width:220px" autocomplete="off"
+               placeholder="Name, barcode, description or category…" value="<?= e($filters['q']) ?>">
       </div>
       <div>
         <label class="form-label mb-1 small">Category</label>
@@ -154,3 +155,55 @@ $sortLink = static function (string $key, string $label) use ($filters): string 
 
   <?php require APP_PATH . '/Views/partials/pagination.php'; ?>
 </div>
+
+<script>
+// Live search: results update while typing, no full page reload.
+// The server renders the same page; we swap the card's content in place.
+(function () {
+  var form = document.getElementById('productFilters');
+  var search = document.getElementById('productSearch');
+  var timer = null;
+  var seq = 0;
+
+  function refresh() {
+    var mySeq = ++seq;
+    var params = new URLSearchParams(new FormData(form));
+    var url = 'index.php?' + params.toString();
+    fetch(url)
+      .then(function (r) { return r.text(); })
+      .then(function (html) {
+        if (mySeq !== seq) return;                    // a newer request finished
+        var doc = new DOMParser().parseFromString(html, 'text/html');
+        var fresh = doc.getElementById('productsCard');
+        var card = document.getElementById('productsCard');
+        if (fresh && card) {
+          card.innerHTML = fresh.innerHTML;
+          history.replaceState(null, '', url);
+          rebind();
+        }
+      })
+      .catch(function () { /* network hiccup: keep current results */ });
+  }
+
+  function rebind() {
+    form = document.getElementById('productFilters');
+    search = document.getElementById('productSearch');
+    var val = search.value;
+    search.focus();
+    search.setSelectionRange(val.length, val.length);
+    attach();
+  }
+
+  function attach() {
+    search.addEventListener('input', function () {
+      clearTimeout(timer);
+      timer = setTimeout(refresh, 300);
+    });
+    form.querySelectorAll('select').forEach(function (sel) {
+      sel.addEventListener('change', refresh);
+    });
+  }
+
+  attach();
+})();
+</script>

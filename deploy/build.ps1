@@ -77,7 +77,7 @@ foreach ($lic in @('COPYING', 'CREDITS', 'README.md')) {
 Write-Output 'Copying application ...'
 $appDest = Join-Path $stage 'Application'
 robocopy $repo $appDest /MIR `
-    /XD "$repo\.git" "$repo\deploy" "$repo\storage" "$repo\node_modules" `
+    /XD "$repo\.git" "$repo\deploy" "$repo\storage" "$repo\releases" "$repo\node_modules" `
     /XF "$repo\config\app.ini" /NFL /NDL /NJH /NJS /NP | Out-Null
 if ($LASTEXITCODE -ge 8) { throw "robocopy failed with code $LASTEXITCODE" }
 New-Item -ItemType Directory -Force (Join-Path $appDest 'storage\logs') | Out-Null
@@ -140,7 +140,7 @@ if ($UpdateZip) {
     $updStage = Join-Path $PSScriptRoot 'build\update-stage'
     if (Test-Path $updStage) { Remove-Item $updStage -Recurse -Force }
     robocopy $repo $updStage /MIR `
-        /XD "$repo\.git" "$repo\deploy" "$repo\storage" "$repo\node_modules" `
+        /XD "$repo\.git" "$repo\deploy" "$repo\storage" "$repo\releases" "$repo\node_modules" `
         /XF "$repo\config\app.ini" /NFL /NDL /NJH /NJS /NP | Out-Null
     if ($LASTEXITCODE -ge 8) { throw "robocopy failed with code $LASTEXITCODE" }
 

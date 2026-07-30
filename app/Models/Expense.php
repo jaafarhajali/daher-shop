@@ -20,8 +20,9 @@ final class Expense extends Model
         $params = [];
 
         if (!empty($f['q'])) {
-            $where[] = '(name LIKE :q OR notes LIKE :q)';
-            $params['q'] = '%' . $f['q'] . '%';
+            $where[] = '(name LIKE :q1 OR notes LIKE :q2)';
+            $like = '%' . $f['q'] . '%';
+            $params += ['q1' => $like, 'q2' => $like];
         }
         if (!empty($f['category'])) {
             $where[] = 'category = :cat';
@@ -53,8 +54,9 @@ final class Expense extends Model
         $where = ['1=1'];
         $params = [];
         if (!empty($f['q'])) {
-            $where[] = '(name LIKE :q OR notes LIKE :q)';
-            $params['q'] = '%' . $f['q'] . '%';
+            $where[] = '(name LIKE :q1 OR notes LIKE :q2)';
+            $like = '%' . $f['q'] . '%';
+            $params += ['q1' => $like, 'q2' => $like];
         }
         if (!empty($f['category'])) {
             $where[] = 'category = :cat';
