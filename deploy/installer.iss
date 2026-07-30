@@ -63,11 +63,15 @@ Source: "{#MyStage}\server.ini"; DestDir: "{app}"; \
     Flags: onlyifdoesntexist uninsneveruninstall
 
 [Dirs]
+; The installer runs elevated, so {app} would be admin-owned - but the app is
+; launched by a NORMAL user afterwards, and MariaDB/logs/updates all write
+; inside {app}. Grant Users modify on the whole tree (single-machine POS).
+Name: "{app}"; Permissions: users-modify
 ; Data folders - never touched by upgrades, never removed by the uninstaller.
-Name: "{app}\Database"; Flags: uninsneveruninstall
-Name: "{app}\Backups"; Flags: uninsneveruninstall
-Name: "{app}\Updates"; Flags: uninsneveruninstall
-Name: "{app}\Logs"; Flags: uninsneveruninstall
+Name: "{app}\Database"; Flags: uninsneveruninstall; Permissions: users-modify
+Name: "{app}\Backups"; Flags: uninsneveruninstall; Permissions: users-modify
+Name: "{app}\Updates"; Flags: uninsneveruninstall; Permissions: users-modify
+Name: "{app}\Logs"; Flags: uninsneveruninstall; Permissions: users-modify
 Name: "{app}\Application\storage\logs"; Flags: uninsneveruninstall
 
 [Icons]

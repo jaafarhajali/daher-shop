@@ -45,6 +45,22 @@ foreach ($ext in @('php_pdo_mysql.dll', 'php_mysqli.dll', 'php_mbstring.dll',
     if (Test-Path $src) { Copy-Item $src (Join-Path $stage 'Server\PHP\ext') }
 }
 
+# Visual C++ runtime, app-local: clean Windows machines do NOT have
+# VCRUNTIME140.dll etc., and XAMPP's php folder does not ship them (it relies
+# on a system-wide install). MariaDB's bin ships the full redistributable set -
+# copy it next to php.exe so PHP runs everywhere without any system install.
+$vcRuntime = @('vcruntime140.dll', 'vcruntime140_1.dll', 'concrt140.dll',
+               'msvcp140.dll', 'msvcp140_1.dll', 'msvcp140_2.dll',
+               'msvcp140_atomic_wait.dll', 'msvcp140_codecvt_ids.dll')
+foreach ($dll in $vcRuntime) {
+    $src = Join-Path "$MariaDbSource\bin" $dll
+    if (-not (Test-Path $src)) { $src = Join-Path "$env:WINDIR\System32" $dll }
+    if (Test-Path $src) { Copy-Item $src (Join-Path $stage 'Server\PHP') -Force }
+}
+if (-not (Test-Path (Join-Path $stage 'Server\PHP\vcruntime140.dll'))) {
+    throw 'VC++ runtime DLLs not found - PHP would fail on clean machines.'
+}
+
 @'
 ; Daher Phone - production PHP configuration.
 ; extension_dir is passed absolutely by the launcher (-d extension_dir=...).
@@ -137,6 +153,11 @@ Write-Output "Package ready: $stage  ($size MB)"
 # --- 7. Optional update package ------------------------------------------------------------
 if ($UpdateZip) {
     Write-Output 'Building update package ...'
+    # The build folder is a workshop, not an archive: drop update zips of
+    # OTHER versions so only the current release's artifacts remain.
+    Get-ChildItem (Join-Path $PSScriptRoot 'build') -Filter 'DaherPhone-update-*.zip' |
+        Where-Object { $_.Name -ne "DaherPhone-update-$version.zip" } |
+        Remove-Item -Force
     $updStage = Join-Path $PSScriptRoot 'build\update-stage'
     if (Test-Path $updStage) { Remove-Item $updStage -Recurse -Force }
     robocopy $repo $updStage /MIR `
